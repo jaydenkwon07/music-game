@@ -12,6 +12,8 @@ var _failed := 0
 
 func _initialize() -> void:
 	test_note_names()
+	test_frequencies()
+	test_note_colors()
 	test_ordered_match()
 	test_partial_progress()
 	test_octave_tolerance()
@@ -30,6 +32,25 @@ func test_note_names() -> void:
 	check(NoteNames.to_midi("Bb2") == 46, "Bb2 is MIDI 46")
 	check(NoteNames.to_name(60) == "C4", "60 spells back to C4")
 	check(NoteNames.pitch_class(72) == NoteNames.pitch_class(60), "C4 and C5 share a pitch class")
+
+
+func test_frequencies() -> void:
+	# The synth tunes itself from to_frequency(), so "in-tune" is this function.
+	check(is_equal_approx(NoteNames.to_frequency(69), 440.0), "A4 is 440 Hz")
+	check(is_equal_approx(NoteNames.to_frequency(81), 880.0), "an octave up doubles frequency")
+	check(is_equal_approx(NoteNames.to_frequency(57), 220.0), "an octave down halves frequency")
+
+
+func test_note_colors() -> void:
+	# §6: pitch class sets hue, octave sets brightness. Every note visual routes
+	# through this, so the mapping's invariants are worth pinning.
+	var c4 := NoteColors.color_for_midi(60)   # C4
+	var c5 := NoteColors.color_for_midi(72)   # C5, same pitch class up an octave
+	var e4 := NoteColors.color_for_midi(64)   # E4, different pitch class
+
+	check(is_equal_approx(c4.h, c5.h), "same pitch class shares a hue across octaves")
+	check(not is_equal_approx(c4.h, e4.h), "different pitch class gets a different hue")
+	check(c5.v > c4.v, "a higher octave is brighter")
 
 
 func test_ordered_match() -> void:

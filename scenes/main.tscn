@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/rooms/test_room.tscn" id="2_room"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://scenes/ui/note_bar.gd" id="4_note_bar"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -21,3 +22,6 @@ offset_bottom = 16.0
 theme_override_colors/font_color = Color(0.6, 0.6, 0.68, 1)
 theme_override_font_sizes/font_size = 8
 text = "…"
+
+[node name="NoteBar" type="Control" parent="UI"]
+script = ExtResource("4_note_bar")

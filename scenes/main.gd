@@ -10,6 +10,19 @@ extends Node2D
 func _ready() -> void:
 	player.position = room.spawn_point()
 	_verify_seam()
+	_spawn_resonators()
+
+
+## Drops a few resonators in the gray box so M1 can test the note -> world
+## response. Scaffolding, like the room itself: real objects get placed in real
+## rooms at M3. Each is tuned to a palette slot, not a pitch.
+func _spawn_resonators() -> void:
+	var placements := {0: Vector2(180, 90), 2: Vector2(240, 78), 4: Vector2(300, 90)}
+	for slot: int in placements:
+		var r := Resonator.new()
+		r.slot = slot
+		r.position = placements[slot]
+		add_child(r)
 
 
 func _process(_delta: float) -> void:

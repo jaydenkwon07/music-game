@@ -1,0 +1,6 @@
+{
+  "id": "starter",
+  "display_name": "Starter Palette",
+  "notes": ["C4", "D4", "E4", "G4", "A4"],
+  "placeholder": true
+}

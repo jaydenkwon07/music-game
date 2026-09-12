@@ -1,0 +1,8 @@
+# Godot 4 import cache and editor state (machine-specific, regenerated on import)
+.godot/
+
+# CLAUDE.md is kept on disk but untracked — repo-wide convention for ~/Code/Projects
+CLAUDE.md
+
+# macOS
+.DS_Store

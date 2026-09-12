@@ -1,0 +1,21 @@
+{
+  "id": "door_test_01",
+  "display_name": "Scaffold Door",
+  "notes": ["C4", "E4", "G4", "C5"],
+  "rhythm": [1, 1, 1, 2],
+  "key": "C",
+  "mode": "major",
+  "tempo_bpm": 90,
+  "match_rules": {
+    "order_matters": true,
+    "timing_matters": false,
+    "octave_matters": false,
+    "allow_transposition": false
+  },
+  "hint": {
+    "color_sequence": ["red", "yellow", "blue", "red"],
+    "reveal_policy": "after_two_failures"
+  },
+  "finale_role": "unassigned",
+  "placeholder": true
+}

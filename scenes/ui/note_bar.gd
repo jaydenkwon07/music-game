@@ -3,7 +3,7 @@ extends Control
 ## The overworld note bar (§7.6): one slot per palette note along the bottom of
 ## the screen, colour first and note name second, flashing when that note plays.
 ##
-## Presentational only — it reads Palette for the notes, colours them through the
+## Presentational only — it reads NoteInventory for the notes, colours them through the
 ## shared NoteColors mapping, and listens to NoteBus for flashes. It never
 ## affects gameplay, so like the synth and the ring it does not gate on
 ## effects_enabled(); it just shows what notes exist and which one was struck.
@@ -23,14 +23,26 @@ func _ready() -> void:
 	_font = ThemeDB.fallback_font
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for _i in Palette.slot_count():
-		_flash.append(0.0)
+	_sync_slots()
 	NoteBus.note_played.connect(_on_note_played)
+	# The bar starts empty and grows a slot on each pickup (§7 Step 1).
+	NoteInventory.note_collected.connect(_on_note_collected)
+
+
+func _on_note_collected(_note_id: String) -> void:
+	_sync_slots()
+	queue_redraw()
+
+
+## Keep one flash timer per filled slot as the inventory grows.
+func _sync_slots() -> void:
+	while _flash.size() < NoteInventory.slot_count():
+		_flash.append(0.0)
 
 
 func _on_note_played(midi: int, _source: Vector2) -> void:
 	for slot in _flash.size():
-		if Palette.midi_for_slot(slot) == midi:
+		if NoteInventory.midi_for_slot(slot) == midi:
 			_flash[slot] = flash_time
 	queue_redraw()
 
@@ -46,7 +58,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var count := Palette.slot_count()
+	var count := NoteInventory.slot_count()
 	if count == 0:
 		return
 	var total_w := count * slot_size.x + (count - 1) * slot_gap
@@ -58,7 +70,7 @@ func _draw() -> void:
 
 
 func _draw_slot(rect: Rect2, slot: int) -> void:
-	var midi := Palette.midi_for_slot(slot)
+	var midi := NoteInventory.midi_for_slot(slot)
 	# NoteRegistry returns its NEUTRAL colour for an empty slot (midi < 0) or an
 	# unassigned pitch class, so no special-casing is needed here.
 	var base := NoteRegistry.color_for_midi(midi)

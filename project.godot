@@ -24,7 +24,7 @@ InputConfig="*res://autoload/input_config.gd"
 NoteBus="*res://autoload/note_bus.gd"
 MelodyLibrary="*res://autoload/melody_library.gd"
 NoteRegistry="*res://autoload/note_registry.gd"
-Palette="*res://autoload/palette.gd"
+NoteInventory="*res://autoload/note_inventory.gd"
 Synth="*res://autoload/synth.gd"
 NoteVisuals="*res://autoload/note_visuals.gd"
 

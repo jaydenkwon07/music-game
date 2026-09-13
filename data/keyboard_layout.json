@@ -1,0 +1,30 @@
+{
+  "_note": "§3 corollary: the keyboard->pitch mapping is DATA, not a dictionary in a script, so it stays rebindable and no pitch enters code. 'piano' is the instrument-state layout (semitone OFFSETS from base_octave's C, not pitches); 'palette' is the overworld slot keys per movement layout. physical_key names resolve through OS.find_keycode_from_string, so bindings follow key POSITION on AZERTY/Dvorak.",
+  "piano": {
+    "base_octave": 4,
+    "keys": [
+      { "action": "piano_00", "physical_key": "A",         "semitone": 0 },
+      { "action": "piano_01", "physical_key": "W",         "semitone": 1 },
+      { "action": "piano_02", "physical_key": "S",         "semitone": 2 },
+      { "action": "piano_03", "physical_key": "E",         "semitone": 3 },
+      { "action": "piano_04", "physical_key": "D",         "semitone": 4 },
+      { "action": "piano_05", "physical_key": "F",         "semitone": 5 },
+      { "action": "piano_06", "physical_key": "T",         "semitone": 6 },
+      { "action": "piano_07", "physical_key": "G",         "semitone": 7 },
+      { "action": "piano_08", "physical_key": "Y",         "semitone": 8 },
+      { "action": "piano_09", "physical_key": "H",         "semitone": 9 },
+      { "action": "piano_10", "physical_key": "U",         "semitone": 10 },
+      { "action": "piano_11", "physical_key": "J",         "semitone": 11 },
+      { "action": "piano_12", "physical_key": "K",         "semitone": 12 },
+      { "action": "piano_13", "physical_key": "O",         "semitone": 13 },
+      { "action": "piano_14", "physical_key": "L",         "semitone": 14 },
+      { "action": "piano_15", "physical_key": "P",         "semitone": 15 },
+      { "action": "piano_16", "physical_key": "SEMICOLON", "semitone": 16 }
+    ]
+  },
+  "palette": {
+    "default_layout": "wasd",
+    "wasd":   ["H", "J", "K", "L", "SEMICOLON"],
+    "arrows": ["A", "S", "D", "F", "G"]
+  }
+}

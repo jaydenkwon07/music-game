@@ -35,7 +35,7 @@ func _on_note_played(midi: int, source: Vector2) -> void:
 		return
 	if global_position.distance_to(source) > hear_radius:
 		return
-	if midi == Palette.midi_for_slot(slot):
+	if midi == NoteInventory.midi_for_slot(slot):
 		_light = light_time
 	else:
 		_shake = shake_time
@@ -55,7 +55,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var base := NoteRegistry.color_for_midi(Palette.midi_for_slot(slot))
+	var base := NoteRegistry.color_for_midi(NoteInventory.midi_for_slot(slot))
 	# Dim at rest so the tuning colour still reads; brightens to full when struck.
 	var lit := (_light / light_time) if light_time > 0.0 else 0.0
 	var col := base.darkened(0.55).lerp(base, lit)

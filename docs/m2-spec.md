@@ -1,6 +1,9 @@
 # M2 — One door, data-driven · Specification
 
-**Status:** Step 0 complete (colour-by-category); Steps 1–4 specified, not built.
+**Status:** Steps 0–2 built. `interact` (space) is now the single world verb
+(D8): pickups are collected with it, and — until Step 3's Door owns entry — it
+also enters the instrument state as a temporary fallback when nothing is in
+range. Steps 3–4 specified, not built.
 **Authority:** `CLAUDE.md` is the contract; this spec expands §7 into buildable
 detail and must stay consistent with it. Where they disagree, `CLAUDE.md` wins —
 say so rather than following this file. The external design doc
@@ -31,8 +34,8 @@ Two supporting design rules that the gate depends on:
 
 ### In scope (the five steps of §7)
 0. Colour by category (`NoteRegistry` + pure `NoteColors`). **Done.**
-1. Note collection — start empty, walk into a pickup, gain a playable slot.
-2. The instrument state — an overlay entered at a door; piano input; no world
+1. Note collection — start empty, walk onto a pickup and press `space`, gain a playable slot.
+2. The instrument state — an overlay entered at a door with `space`; home-row piano input; no world
    effects; free instant cancel.
 3. `MelodyLock` and the door — gems that show structure and progress; open on
    match; reset on wrong note.
@@ -58,7 +61,7 @@ New and changed files, by responsibility. `[done]` marks Step 0.
 autoload/
   note_registry.gd     [done] Loads data/notes.json; id/midi -> {category,index}; colour resolution.
   note_inventory.gd    [step 1, replaces palette.gd] What the player owns, by pitch class + slots.
-  input_config.gd      [step 2, modify] + `interact` action; + piano actions from keyboard_layout.json.
+  input_config.gd      [step 2, modify] + `interact`/`cancel`/octave actions; + palette and piano actions from keyboard_layout.json.
 scripts/music/
   note_colors.gd       [done] PURE. color(category, index, octave) -> Color.
 scenes/
@@ -68,7 +71,7 @@ scenes/
     door.gd/.tscn         [step 3, new] @export melody_id; gems; open-on-unlock.
     melody_lock.gd        [step 3, new] Accumulates played notes -> MelodyMatcher -> unlocked.
   player/
-    note_input.gd      [step 2, modify] Overworld number-row OR instrument-state piano, by mode.
+    note_input.gd      [step 2, modify] Overworld palette OR instrument-state piano, by mode.
     player.gd          [step 2, modify] Suspend movement while instrument state is active.
   ui/
     note_bar.gd        [done, modified] colours through NoteRegistry; grows as slots fill.
@@ -76,7 +79,7 @@ scenes/
   main.gd              [step 2, modify] Instantiates the instrument overlay.
 data/
   notes.json           [done, new] The note registry (3 placeholder notes); source of truth for category/colour.
-  keyboard_layout.json [step 2, new] Physical key -> semitone offset for the piano layout.
+  keyboard_layout.json [step 2, new] Piano semitone map + per-layout palette keys.
   melodies/
     door_test_01.json  [step 3, modify] Becomes the 1-note first door.
     door_test_02.json  [step 3, new] The 3-note ordered door.
@@ -128,36 +131,93 @@ resolves to exactly one note by its pitch class.
 
 ### 4.2 Keyboard layout — `data/keyboard_layout.json` (new, Step 2)
 
-The instrument-state piano map, in data so it stays rebindable and holds no
-pitch in code (§3 corollary). Maps physical keys to **semitone offsets** from a
-base octave; the pitch is `base_octave`'s C plus the offset.
+Both key maps, in data so they stay rebindable and no pitch enters code (§3
+corollary). One file, one loader.
+
+**`piano`** maps physical keys to **semitone offsets** from a base octave; the
+pitch is `base_octave`'s C plus the offset plus the current octave shift.
+**`palette`** holds the overworld slot keys per movement layout.
 
 ```json
 {
-  "base_octave": 4,
-  "keys": [
-    { "action": "piano_c",  "physical_key": "Z", "semitone": 0 },
-    { "action": "piano_cs", "physical_key": "S", "semitone": 1 },
-    { "action": "piano_d",  "physical_key": "X", "semitone": 2 },
-    { "action": "piano_ds", "physical_key": "D", "semitone": 3 },
-    { "action": "piano_e",  "physical_key": "C", "semitone": 4 },
-    { "action": "piano_f",  "physical_key": "V", "semitone": 5 },
-    { "action": "piano_fs", "physical_key": "G", "semitone": 6 },
-    { "action": "piano_g",  "physical_key": "B", "semitone": 7 },
-    { "action": "piano_gs", "physical_key": "H", "semitone": 8 },
-    { "action": "piano_a",  "physical_key": "N", "semitone": 9 },
-    { "action": "piano_as", "physical_key": "J", "semitone": 10 },
-    { "action": "piano_b",  "physical_key": "M", "semitone": 11 },
-    { "action": "piano_oct_c", "physical_key": "Q", "semitone": 12 }
-  ]
+  "piano": {
+    "base_octave": 4,
+    "keys": [
+      { "action": "piano_00", "physical_key": "A",         "semitone": 0 },
+      { "action": "piano_01", "physical_key": "W",         "semitone": 1 },
+      { "action": "piano_02", "physical_key": "S",         "semitone": 2 },
+      { "action": "piano_03", "physical_key": "E",         "semitone": 3 },
+      { "action": "piano_04", "physical_key": "D",         "semitone": 4 },
+      { "action": "piano_05", "physical_key": "F",         "semitone": 5 },
+      { "action": "piano_06", "physical_key": "T",         "semitone": 6 },
+      { "action": "piano_07", "physical_key": "G",         "semitone": 7 },
+      { "action": "piano_08", "physical_key": "Y",         "semitone": 8 },
+      { "action": "piano_09", "physical_key": "H",         "semitone": 9 },
+      { "action": "piano_10", "physical_key": "U",         "semitone": 10 },
+      { "action": "piano_11", "physical_key": "J",         "semitone": 11 },
+      { "action": "piano_12", "physical_key": "K",         "semitone": 12 },
+      { "action": "piano_13", "physical_key": "O",         "semitone": 13 },
+      { "action": "piano_14", "physical_key": "L",         "semitone": 14 },
+      { "action": "piano_15", "physical_key": "P",         "semitone": 15 },
+      { "action": "piano_16", "physical_key": "SEMICOLON", "semitone": 16 }
+    ]
+  },
+  "palette": {
+    "default_layout": "wasd",
+    "wasd":   ["H", "J", "K", "L", "SEMICOLON"],
+    "arrows": ["A", "S", "D", "F", "G"]
+  }
 }
 ```
 
-This is the §6 layout: white keys `Z X C V B N M`, black keys `S D` / `G H J`,
-`Q` row for the octave above. It collides with `WASD` on purpose — it only
-exists where movement is suspended. The `Q` row is a starting subset; more
-octave-up keys can be added as data without code change. `physical_key` names map
-to `Key.KEY_*` physical keycodes (§6: bindings follow key position).
+**The piano layout is white keys on the home row** (§6): `A S D F G H J K L ;`
+as C D E F G A B C D E, with black keys above on the `Q` row —
+`W E _ T Y U _ O P`. `R` and `I` are **deliberately absent**, exactly where a
+piano has no black key between E–F and B–C. That gap is self-teaching; do not
+"fill it in."
+
+Range is C4–E5, seventeen semitones, before any octave shift. `physical_key`
+names map to `Key.KEY_*` physical keycodes, so positions stay correct on AZERTY
+and Dvorak.
+
+**M2 defaults to the `wasd` palette.** The `arrows` variant ships in data and is
+reachable through the existing Tab debug swap, which must now switch **movement
+and palette together** — they are one layout choice, not two.
+
+#### Two collisions this layout introduces
+
+**1. Palette and piano actions share physical keys.** In `wasd`, the palette
+sits on `H J K L ;`, which are also piano white keys A B C D E. This is
+harmless — the two sets are read in mutually exclusive modes (§4.x `note_input`)
+— but `InputConfig._key_owner()` from M0 treats any duplicate physical key as a
+conflict. **Scope the duplicate guard per action group** (movement / palette /
+piano / system) rather than globally, or `rebind()` will refuse valid bindings
+and report phantom conflicts.
+
+**2. Movement keys are piano keys.** `W A S D` are C♯, C, D and E in the
+instrument state. Safe only because movement is suspended there — which is the
+whole reason the instrument state exists (§6). If anything ever lets the player
+move and play simultaneously, this breaks immediately.
+
+#### Other bindings (Step 2)
+
+| Action | Key | Notes |
+|---|---|---|
+| `interact` | `SPACE` | Enter/exit the instrument state. Reachable from either movement layout. |
+| `cancel` | `ESCAPE` | Layered: exits the instrument state when active; reserved for pause otherwise. |
+| `octave_down` | `[` | Shifts the piano map down an octave. |
+| `octave_up` | `]` | Shifts it up. |
+
+**Octave shift is in scope for M2.** `octave_matters` is false so it changes
+nothing mechanically — but one fixed octave feels like a cage the first time a
+player tries to actually play something at a door, and it is four lines. Clamp
+the shift to ±2 and reset it to 0 on entering the instrument state, so a door
+attempt always starts from a known place.
+
+**Never hardcode a key's printed letter.** Any on-screen hint reads its label
+from `DisplayServer.keyboard_get_label_from_physical()`. Hints must also be
+**mode-aware**: in `arrows` mode `A S D F G` are palette slots in the overworld
+and white keys C–G in the instrument state.
 
 ### 4.3 Door melodies — `data/melodies/*.json`
 
@@ -233,13 +293,13 @@ category → `NEUTRAL`. Looks nothing up (§4).
 ### 5.3 `NoteInventory` (autoload, replaces `Palette`) — Step 1
 
 What the player owns, by pitch class, plus the overworld slot assignment. The
-number-row palette (`note_slot_0`–`4`) reads slots from here; world objects
+overworld palette reads slots from here; world objects
 reference a **slot** (§3 corollary), which is why the resonators keep working
 with no change beyond the autoload rename.
 
 ```gdscript
 const MAX_SLOTS := 5
-const OVERWORLD_OCTAVE := 4      # the octave the number-row plays; instrument state can go elsewhere
+const OVERWORLD_OCTAVE := 4      # the octave the palette plays; instrument state can go elsewhere
 
 signal note_collected(note_id: String)
 
@@ -259,7 +319,7 @@ Behaviour:
 - `collect(id)` resolves the id through `NoteRegistry` (rejects an unknown id),
   refuses a duplicate pitch class or a full inventory, assigns the note to the
   lowest free slot, and emits `note_collected`.
-- `midi_for_slot` returns the slot note's pitch class at `OVERWORLD_OCTAVE`,
+- `midi_for_slot` returns the slot note's pitch class at `OVERWORLD_OCTAVE` (the overworld palette is fixed to one octave; only the instrument state shifts),
   computed from `NoteRegistry.by_id(...).pitch_class` via `NoteNames`. No pitch
   literal (§3).
 - `slot_count()` returns filled slots, so `note_bar` shows one swatch per owned
@@ -276,14 +336,15 @@ appears immediately.
 @export var note_id: String        # e.g. "n_break"; resolved through NoteRegistry — NO pitch here
 ```
 
-- An `Area2D` + a small drawn shape tinted by the note's colour
+- An `Interactable` (§ D8) + a small drawn shape tinted by the note's colour
   (`NoteRegistry.by_id(note_id)` → `NoteColors.color(category, index,
   NoteInventory.OVERWORLD_OCTAVE)`).
-- On the player's body entering: `NoteInventory.collect(note_id)`; if it
-  returns `true`, play a brief pickup flash and `queue_free()`. If `false`
-  (already owned), do nothing and remain — harmless.
-- **Walk-in collection**, not interact — the interact key is reserved for doors
-  (Step 2), and §7 Step 1's done-condition is "walk into a pickup."
+- `interact(player)`: `NoteInventory.collect(note_id)`; if it returns `true`,
+  play a brief pickup flash and `queue_free()`. `can_interact()` returns false
+  once collected, so a duplicate pickup stays put rather than vanishing.
+- **Collected with `interact` (space)**, not walk-in — the single world verb
+  (D8) covers pickups, doors, NPCs and hints alike. This **reverses** the
+  original walk-in decision; Step 1's done-condition changed to match (§8).
 
 **M2 pickups placed in the test room:** three, granting `n_break` (C),
 `n_mend` (D), `n_step` (E) — one per category, so collection visibly changes the
@@ -291,15 +352,17 @@ note bar's colours.
 
 ### 5.5 Input additions — `input_config.gd` — Step 2
 
-- Register **`interact`** (physical `E`, plus `KEY_ENTER` as a convenience). Used
+- Register **`interact`** (physical `SPACE`), **`cancel`** (`ESCAPE`), and **`octave_down`/`octave_up`** (`[` / `]`). Used
   to enter/exit the instrument state at a door.
-- Load `data/keyboard_layout.json`; register each `keys[]` entry as an action
+- Load `data/keyboard_layout.json`; register each `piano.keys[]` entry as an action, and the `palette` keys for the active movement layout
   bound to its physical key. Expose:
 
 ```gdscript
 func piano_actions() -> Array[String]      # the registered piano action names
 func piano_semitone(action: String) -> int # semitone offset for an action
-func piano_base_octave() -> int            # keyboard_layout.base_octave
+func piano_base_octave() -> int            # keyboard_layout.piano.base_octave
+func palette_actions() -> Array[String]    # slot actions for the active layout
+func octave_shift() -> int                 # current shift, clamped -2..2, reset on enter
 ```
 
 Keeping the semitone map in `InputConfig` (which already owns the `InputMap`
@@ -310,13 +373,13 @@ pitch literal enters code — offsets are semitone integers from data.
 
 Two modes, switched by `NoteBus.instrument_state_changed`:
 
-- **Overworld** (`effects_enabled()` true): read `note_slot_0`–`4`; on
+- **Overworld** (`effects_enabled()` true): read `InputConfig.palette_actions()`; on
   just-pressed play `NoteInventory.midi_for_slot(slot)` via
   `NoteBus.play_note(midi, player.global_position)` when `midi >= 0`.
 - **Instrument state** (active): read `InputConfig.piano_actions()`; for each
-  just-pressed, `midi = (piano_base_octave + 1) * 12 + piano_semitone(action)`;
+  just-pressed, `midi = (piano_base_octave + octave_shift() + 1) * 12 + piano_semitone(action)`;
   play only if `NoteInventory.owns_pitch_class(NoteNames.pitch_class(midi))` —
-  **unowned keys do nothing** (§7 Step 2). Overworld number-row is suppressed in
+  **unowned keys do nothing** (§7 Step 2). The overworld palette is suppressed in
   this mode (the two layouts collide by design, §6).
 
 Notes still sound and still spawn rings in both modes (`Synth` and `NoteVisuals`
@@ -375,10 +438,10 @@ func total() -> int     # target note count (drives gem count)
 
 - Composes a `MelodyLock` child (its `melody_id` set from the door's).
 - An `Area2D` interaction zone tracks whether the player is inside.
-- **Enter:** player in-zone presses `interact` while `NoteBus.effects_enabled()`
+- **Enter:** player in-zone presses `interact` (`space`) while `NoteBus.effects_enabled()`
   (i.e. not already in an instrument state) → `NoteBus.set_instrument_state(true)`
   and `lock.arm()`.
-- **Exit / cancel:** `interact` again while active → `set_instrument_state(false)`,
+- **Exit / cancel:** `interact` or `cancel` while active → `set_instrument_state(false)`,
   `lock.disarm()`, reset gems. Instant and free (§6).
 - **Gems:** drawn along the door frame, **one per melody note**. Each gem is
   tinted by its target note's colour (`melody.notes[i]` → MIDI →
@@ -409,7 +472,7 @@ nothing to hide. A hidden-hint door is a deliberate later override, not M2.
 Start empty (no notes, empty note bar)
   → walk into pickup(n_break) → NoteInventory.collect → note bar gains a C swatch
   → (collect n_mend, n_step similarly)
-Walk into a Door's zone → press interact
+Walk into a Door's zone → press space
   → Door: effects_enabled()? yes → NoteBus.set_instrument_state(true) + lock.arm()
   → player.gd suspends movement; InstrumentOverlay fades in; note_input switches to piano
 Play piano keys (owned pitch classes only)
@@ -419,7 +482,7 @@ Play piano keys (owned pitch classes only)
        IN_PROGRESS → progress_changed → Door lights the next gem
        MISMATCH    → mismatch → Door flashes + resets gems (no penalty)
        MATCH       → unlocked → Door opens & stays open → set_instrument_state(false)
-Press interact again before matching → set_instrument_state(false) + lock.disarm() (free cancel)
+Press space or escape before matching → set_instrument_state(false) + lock.disarm() (free cancel)
 ```
 
 ---
@@ -458,13 +521,23 @@ Build one step at a time, stopping after each so the owner can run it (§7).
 - **Step 0 — Colour by category. [DONE]**
   Done: existing M1 visuals still work, now coloured by category; tests pin the
   new mapping. (32 unit assertions pass; boots clean; one-rule guard clean.)
-- **Step 1 — Note collection.**
-  Done: you start empty, walk into a pickup, and the note bar gains a slot you
-  can immediately play (number row).
-- **Step 2 — The instrument state.**
-  Done: walk to a door, press interact, play freely on the piano layout with no
+- **Step 1 — Note collection. [BUILT]**
+  Done: you start empty, walk onto a pickup and press `space` to collect it, and
+  the note bar gains a slot you can immediately play on the palette keys.
+  (Collection is via the single `interact` verb, D8 — not walk-in.)
+- **Step 2 — The instrument state. [BUILT — run-verify pending]**
+  Done: walk to a door, press space, play freely on the home-row piano layout with no
   world effects, and walk away mid-phrase with no penalty. Overlay fades over the
   running world; unowned keys are silent.
+  **Built with one deviation:** the Door does not exist yet (Step 3), so the
+  instrument state is entered by a **temporary fallback in `Interactor`** — when
+  `interact` (space) is pressed with no Interactable in range, it toggles the
+  instrument state on; `interact`/`cancel` while active toggles it off. Clearly
+  marked for Step 3's Door to replace with a proximity-gated entry paired with
+  `lock.arm()/disarm()`. The palette also migrated off the number row onto the
+  home-row keys from `keyboard_layout.json` (§4.2), and the Tab debug swap now
+  switches movement + palette together. Run-verification (the piano feel, the
+  overlay, movement suspend, collecting on space) is the owner's, per §7.
 - **Step 3 — MelodyLock and the door.**
   Done: a door with a 1-note melody (`door_test_01`) opens; a door with a 3-note
   melody (`door_test_02`) requires the right order; gems light one at a time and
@@ -493,14 +566,50 @@ inherits the reasoning (§12; ADR-style, since the repo has no `docs/decisions/`
   no category. Rather than touch the palette in Step 0 (that is Step 1's job),
   unknown pitch classes fall back to a desaturated neutral. Step 1 retires the
   fixed palette entirely, so the gap closes then.
-- **D1 — `NoteInventory` replaces `Palette` and starts empty.** The number-row
+- **D1 — `NoteInventory` replaces `Palette` and starts empty.** The overworld
   palette becomes a view of what the player owns; slots fill on collection. Keeps
   the §3 slot corollary and the resonators working with only a rename.
 - **D2 — Piano semitone map lives in `InputConfig`.** One loader owns both the
   `InputMap` binding and the semitone lookup, so `keyboard_layout.json` is read
   once and no pitch enters code.
-- **D3 — Gems reveal target colours in M2.** Per §7 Step 3, the gems' colours are
-  the hint; hidden-hint doors are a deliberate later override, out of M2 scope.
+- **D3 — Gems reveal target colours in M2, as scaffolding.** The gems stand in
+  for world clue delivery that does not exist yet (crystals, murals, humming
+  creatures — all M3). This is **not** the intended design: the standing rule is
+  that doors show structure and never content (§6). The revealed colours come
+  out at M3 when clue delivery arrives. Recorded so a later session doesn't
+  inherit revealed gems as a decision.
+- **D4 — Interact is `space`, not `E`.** `E` was fine when notes lived on the
+  number row, but with the palette on home row `space` is the only key either
+  hand reaches without moving. `escape` is layered: it exits the instrument
+  state when active, and is otherwise reserved for pause.
+- **D5 — Home-row piano, not the tracker row (Session 7).** White keys moved
+  from `Z X C V B N M` to `A S D F G H J K L ;`. Two reasons: the hand rests on
+  home row so the thumb falls on `space` without shifting down and forward, and
+  range grows from thirteen semitones to seventeen. `R` and `I` land unbound
+  exactly where a piano has no black key, which teaches the layout for free.
+  Cost: this is no longer the FL Studio / Renoise convention, so prior DAW
+  habits don't carry — accepted, since that convention only ever helped players
+  who had used a tracker.
+- **D6 — The palette mirrors the movement layout, and M2 defaults to `wasd`.**
+  Notes sit under the hand that isn't moving: `H J K L ;` for WASD, `A S D F G`
+  for arrows. Reverses the earlier fixed-number-row plan — a player only ever
+  uses one layout, so consistency across both buys nothing while home row buys
+  a hand position. The number row is now free and reserved for loadout swapping.
+- **D7 — Duplicate physical keys are legal across action groups.** Palette and
+  piano actions intentionally share keys. The M0 `_key_owner()` guard must be
+  scoped per group or it will reject valid bindings (see §4.2).
+- **D8 — `interact` (space) is the single world verb (Session 8).** The owner's
+  call: one key does all interaction — collecting a note, and later opening a
+  door, talking to an NPC, reading a hint. This **reverses** §5.4's original
+  walk-in pickup (Step 1's done-condition changed with it). The seam is an
+  `Interactable` base (`Area2D` + `interact()`/`can_interact()`) that joins an
+  `IN_RANGE_GROUP` while the player is inside it; a player-side `Interactor` fires
+  the nearest in-range one on `interact`, reading the group rather than holding
+  references (§4). `NotePickup` is the first implementer; the Step 3 Door and any
+  M3 NPC/hint are just more implementers — **none of those behaviours are built,
+  only the seam.** Until the Door exists, the `Interactor` also carries the
+  temporary instrument-state entry (enter when nothing is in range; `interact`/
+  `cancel` exits while active), which the Door replaces.
 
 ---
 

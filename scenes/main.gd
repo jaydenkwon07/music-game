@@ -11,6 +11,21 @@ func _ready() -> void:
 	player.position = room.spawn_point()
 	_verify_seam()
 	_spawn_resonators()
+	_spawn_pickups()
+	add_child(InstrumentOverlay.new())
+
+
+## Drops the three M2 notes in the room to be collected (§7 Step 1). The player
+## starts empty, so these are the only way to gain anything playable. One per
+## category, so collecting visibly changes the note bar's colours. Scaffolding,
+## like the resonators — real pickups get placed in real rooms at M3.
+func _spawn_pickups() -> void:
+	var placements := {"n_break": Vector2(180, 120), "n_mend": Vector2(240, 120), "n_step": Vector2(300, 120)}
+	for note_id: String in placements:
+		var pickup := NotePickup.new()
+		pickup.note_id = note_id
+		pickup.position = placements[note_id]
+		add_child(pickup)
 
 
 ## Drops a few resonators in the gray box so M1 can test the note -> world

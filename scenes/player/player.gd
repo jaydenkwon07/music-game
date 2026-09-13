@@ -15,7 +15,22 @@ extends CharacterBody2D
 var facing: Vector2 = Vector2.DOWN
 
 
+func _ready() -> void:
+	# Interactables detect the player body by this group; the Interactor turns
+	# `interact` into the single world verb. Added in code to avoid touching the
+	# scene file, matching how main.gd instantiates its scaffolding.
+	add_to_group("player")
+	add_child(Interactor.new())
+
+
 func _physics_process(delta: float) -> void:
+	# Instrument state suspends movement (§6): notes become musical only, the world
+	# keeps running behind the overlay, and the movement keys are free to double as
+	# piano keys because nothing reads them here. Model on Ocarina of Time.
+	if NoteBus.instrument_state_active:
+		velocity = Vector2.ZERO
+		return
+
 	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 	# get_vector normalises for us, so diagonals are not faster than cardinals.

@@ -42,15 +42,36 @@ func test_frequencies() -> void:
 
 
 func test_note_colors() -> void:
-	# §6: pitch class sets hue, octave sets brightness. Every note visual routes
-	# through this, so the mapping's invariants are worth pinning.
-	var c4 := NoteColors.color_for_midi(60)   # C4
-	var c5 := NoteColors.color_for_midi(72)   # C5, same pitch class up an octave
-	var e4 := NoteColors.color_for_midi(64)   # E4, different pitch class
+	# §6: hue comes from (category, index within category), never from pitch;
+	# octave sets brightness. Every note visual routes through this mapping, so
+	# its invariants are worth pinning. NoteColors is pure — it takes category
+	# and index as values and looks nothing up (that's NoteRegistry's job).
+	var d0 := NoteColors.color("destructive", 0, 4)  # red end of the warm arc
+	var d3 := NoteColors.color("destructive", 3, 4)  # yellow end
+	var r0 := NoteColors.color("restorative", 0, 4)
+	var m0 := NoteColors.color("movement", 0, 4)
 
-	check(is_equal_approx(c4.h, c5.h), "same pitch class shares a hue across octaves")
-	check(not is_equal_approx(c4.h, e4.h), "different pitch class gets a different hue")
-	check(c5.v > c4.v, "a higher octave is brighter")
+	# Categories own separate, ordered arcs of the hue wheel: warm < green < cool.
+	check(d0.h < r0.h and r0.h < m0.h, "categories occupy distinct, ordered hue arcs")
+	# Index climbs its category's arc, so notes within a family stay distinct.
+	check(d0.h < d3.h, "index moves the hue along the category arc")
+
+	# Octave is brightness, not hue.
+	var d0_high := NoteColors.color("destructive", 0, 5)
+	check(is_equal_approx(d0_high.h, d0.h), "octave does not change hue")
+	check(d0_high.v > d0.v, "a higher octave is brighter")
+
+	# All twelve (category, index) pairs are visually distinct hues (§6: four
+	# shades of one hue per category was rejected as unreadable on a 6px gem).
+	var hues := {}
+	for category in ["destructive", "restorative", "movement"]:
+		for index in 4:
+			hues[snappedf(NoteColors.color(category, index, 4).h, 0.001)] = true
+	check(hues.size() == 12, "twelve category/index pairs give twelve distinct hues")
+
+	# An unknown category renders neutral, not a crash or a stolen hue — this is
+	# what an unassigned pitch class falls back to (§9: only three notes in M2).
+	check(NoteColors.color("nope", 0, 4).s < 0.2, "unknown category renders desaturated")
 
 
 func test_ordered_match() -> void:

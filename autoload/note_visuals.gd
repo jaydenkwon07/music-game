@@ -19,4 +19,4 @@ func _on_note_played(midi: int, source: Vector2) -> void:
 	var ring := NoteRing.new()
 	scene.add_child(ring)
 	ring.global_position = source
-	ring.setup(NoteColors.color_for_midi(midi))
+	ring.setup(NoteRegistry.color_for_midi(midi))

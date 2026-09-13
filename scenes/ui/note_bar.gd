@@ -59,7 +59,9 @@ func _draw() -> void:
 
 func _draw_slot(rect: Rect2, slot: int) -> void:
 	var midi := Palette.midi_for_slot(slot)
-	var base := NoteColors.color_for_midi(midi) if midi >= 0 else Color(0.2, 0.2, 0.24)
+	# NoteRegistry returns its NEUTRAL colour for an empty slot (midi < 0) or an
+	# unassigned pitch class, so no special-casing is needed here.
+	var base := NoteRegistry.color_for_midi(midi)
 
 	# Colour first: the swatch is the primary channel. Flash brightens it toward
 	# white on press, fading back over flash_time.

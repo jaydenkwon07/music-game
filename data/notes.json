@@ -1,0 +1,8 @@
+{
+  "_placeholder": "§9: which pitch class maps to which category is the owner's call and a musician's decision. These three are CLEARLY-FLAGGED PLACEHOLDERS for M2 (only three notes are needed). Do NOT treat C=destructive / D=restorative / E=movement as final, and do not fill in all twelve.",
+  "notes": [
+    { "id": "n_break", "pitch_class": "C", "category": "destructive", "index": 0 },
+    { "id": "n_mend",  "pitch_class": "D", "category": "restorative", "index": 0 },
+    { "id": "n_step",  "pitch_class": "E", "category": "movement",    "index": 0 }
+  ]
+}

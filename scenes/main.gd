@@ -12,7 +12,21 @@ func _ready() -> void:
 	_verify_seam()
 	_spawn_resonators()
 	_spawn_pickups()
+	_spawn_doors()
 	add_child(InstrumentOverlay.new())
+
+
+## Drops the two M2 doors (§7 Step 3): a 1-note first door and a 3-note ordered
+## door, so the length ramp and gem count are both visible. Scaffolding like the
+## resonators — real doors get placed in real rooms at M3. Each references only a
+## melody id; the melody (and its gem count) is pure data.
+func _spawn_doors() -> void:
+	var placements := {"door_test_01": Vector2(120, 50), "door_test_02": Vector2(400, 50)}
+	for melody_id: String in placements:
+		var door := Door.new()
+		door.melody_id = melody_id
+		door.position = placements[melody_id]
+		add_child(door)
 
 
 ## Drops the three M2 notes in the room to be collected (§7 Step 1). The player

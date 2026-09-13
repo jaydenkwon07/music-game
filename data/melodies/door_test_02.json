@@ -1,8 +1,8 @@
 {
-  "id": "door_test_01",
-  "display_name": "First Door",
-  "notes": ["C4"],
-  "rhythm": [1],
+  "id": "door_test_02",
+  "display_name": "Second Door",
+  "notes": ["C4", "D4", "E4"],
+  "rhythm": [1, 1, 1],
   "key": "C",
   "mode": "major",
   "tempo_bpm": 90,

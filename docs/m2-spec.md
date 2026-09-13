@@ -1,9 +1,10 @@
 # M2 — One door, data-driven · Specification
 
-**Status:** Steps 0–2 built. `interact` (space) is now the single world verb
-(D8): pickups are collected with it, and — until Step 3's Door owns entry — it
-also enters the instrument state as a temporary fallback when nothing is in
-range. Steps 3–4 specified, not built.
+**Status:** Steps 0–3 built (Step 3 = MelodyLock + Door, run-verify pending).
+`interact` (space) is the single world verb (D8): it collects notes and, at a
+Door, enters the instrument state and arms that door's melody lock — the Door now
+owns entry, so the Step 2 temporary fallback is gone. Step 4 (prove the swap) is
+the owner's demonstration and is the M2 gate. Step 4 not yet done.
 **Authority:** `CLAUDE.md` is the contract; this spec expands §7 into buildable
 detail and must stay consistent with it. Where they disagree, `CLAUDE.md` wins —
 say so rather than following this file. The external design doc
@@ -538,10 +539,15 @@ Build one step at a time, stopping after each so the owner can run it (§7).
   home-row keys from `keyboard_layout.json` (§4.2), and the Tab debug swap now
   switches movement + palette together. Run-verification (the piano feel, the
   overlay, movement suspend, collecting on space) is the owner's, per §7.
-- **Step 3 — MelodyLock and the door.**
+- **Step 3 — MelodyLock and the door. [BUILT — run-verify pending]**
   Done: a door with a 1-note melody (`door_test_01`) opens; a door with a 3-note
   melody (`door_test_02`) requires the right order; gems light one at a time and
-  reset on a wrong note.
+  reset on a wrong note. Logic verified headlessly (arm → correct unlocks with
+  octave tolerance; wrong note resets with no penalty; un-armed doors ignore
+  overworld notes). The gems' look, door placement and feel are the owner's to
+  run-verify (§7). The Door is an `Interactable` composing a `MelodyLock`; entry
+  and exit run through `NoteBus.instrument_state_changed`. Physical blocking is
+  wired (a `StaticBody2D` disabled on open) but gates nothing until M3 rooms.
 - **Step 4 — Prove the swap.**
   Edit `data/melodies/door_test_0*.json` (change the notes and their count),
   relaunch, confirm the door now wants a different melody with a different number

@@ -18,15 +18,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("interact"):
 		return
 
+	# Entering the instrument state is now a Door's job (it arms its melody lock);
+	# `interact` with nothing in range does nothing.
 	var target := _nearest_interactable()
 	if target != null:
 		target.interact(get_parent())
-		return
-
-	# TEMPORARY (Step 2): there is no Door yet, so `interact` with nothing in range
-	# enters the instrument state. Step 3's Door replaces this — entry becomes a
-	# Door Interactable that also arms the melody lock.
-	NoteBus.set_instrument_state(true)
 
 
 ## The closest in-range Interactable that will respond right now, or null. Reads

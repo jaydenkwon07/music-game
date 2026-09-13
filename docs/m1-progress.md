@@ -1,22 +1,20 @@
-# M1 — The Note Toy: progress
+# M1 — The Note Toy: complete
 
-Status as of **2026-09-12**. M1 is the "note toy" milestone (CLAUDE.md §7): the
-player can play notes, each makes a sound and a visible effect. The gate is
-whether *sitting in a gray room playing notes feels good on its own*, with no
-goal attached — this is a question the milestone exists to answer, not a feature
-list to complete.
+**Status: M1 complete** (build), 2026-09-12. All four build steps are
+implemented, verified, committed (`b3b8923`) and pushed. The milestone's
+aesthetic gate is **deferred, not failed** — see [M1 outcome](#m1-outcome--the-gate)
+at the bottom.
 
-Build plan is four steps, each stopped at for the owner to run:
+M1 is the "note toy" milestone (CLAUDE.md §7): the player can play notes, each
+makes a sound and a visible effect. Built in four steps, each stopped at for the
+owner to run:
 
 | Step | What | State |
 |---|---|---|
-| 1 | Smallest thing that makes sound | **Done, confirmed audible on device** |
-| 2 | Make a note visible (expanding ring + shared colour) | **Implemented; import + tests green; awaiting on-screen confirmation** |
-| 3 | The note bar | Not started |
-| 4 | The resonator | Not started |
-
-Everything below is committed to nothing yet — all changes are **uncommitted on
-`main`**.
+| 1 | Smallest thing that makes sound | Done, confirmed audible on device |
+| 2 | Make a note visible (expanding ring + shared colour) | Done, confirmed on screen |
+| 3 | The note bar | Done, confirmed on screen |
+| 4 | The resonator | Done, confirmed on screen |
 
 ---
 
@@ -36,112 +34,116 @@ note, since corrected in CLAUDE.md §2).
 
 - **`data/palettes/starter.json`** — the overworld note palette, same shape as a
   melody's `notes` array. C major pentatonic in octave 4: `C4 D4 E4 G4 A4`.
-  `placeholder: true`. This is editable data per §3 — rewrite it and every slot
-  retunes with no code change.
-- **`autoload/palette.gd`** (`Palette`) — loads the palette at boot and exposes
+  `placeholder: true`. Editable data per §3 — rewrite it and every slot retunes
+  with no code change.
+- **`autoload/palette.gd`** (`Palette`) — loads the palette at boot; exposes
   `midi_for_slot(slot) -> int` (−1 for an empty/malformed slot) and
   `slot_count()`. Input and world objects reference a *slot*, never a pitch.
 - **`autoload/synth.gd`** (`Synth`) — the runtime synth (§7.1). Generates tones
   with `AudioStreamGenerator` rather than sample files, so tuning is exact by
   construction (`NoteNames.to_frequency()`) and nothing needs re-recording when
-  the palette changes. Real instrument samples can replace it behind the bus
-  later. Listens to `NoteBus.note_played`.
+  the palette changes. Real instrument samples replace it behind the bus later.
 - **`scenes/player/note_input.gd`** (`NoteInput`) — a Node2D child of the player
-  that reads `note_slot_0`–`note_slot_4` and calls
-  `NoteBus.play_note(midi, global_position)`. Kept off `player.gd` so movement
-  stays movement (§7.3). Held keys pluck once (`is_action_pressed` ignores key
-  repeat).
+  reading `note_slot_0`–`note_slot_4` and calling
+  `NoteBus.play_note(midi, global_position)`. Kept off `player.gd` (§7.3). Held
+  keys pluck once.
 
 ### Synth design
 
-- Single `AudioStreamGenerator`; an **8-voice pool** mixed in one buffer (not one
-  player per voice) so the summed output can be scaled to avoid clipping — the
-  per-player bus mixer could not do that for us.
-- Per voice: **linear attack** (~6 ms, removes the onset click) then
-  **exponential decay** (`decay_tau` 0.28 s). A finished voice frees itself; a
-  9th note steals the oldest.
-- **Clipping control:** the mix is divided by `sqrt(active voice count)`, so a
-  chord stays louder than a single note without exceeding full scale (§7.1). The
-  divisor is eased toward its target so a starting/ending voice doesn't jump the
-  scale of notes already sounding and click.
-- Tunable `@export`s on the autoload: `voice_gain` (0.22), `master_gain` (0.9),
-  `attack` (0.006), `decay_tau` (0.28). Waveform is a plain sine — a deliberate
-  placeholder; the owner will replace the sound later.
+- Single `AudioStreamGenerator`; an **8-voice pool** mixed in one buffer so the
+  summed output can be scaled to avoid clipping.
+- Per voice: **linear attack** (~6 ms) then **exponential decay**
+  (`decay_tau` 0.28 s). A finished voice frees itself; a 9th note steals the
+  oldest.
+- **Clipping control:** the mix is divided by `sqrt(active voice count)` (§7.1),
+  the divisor eased so a starting/ending voice doesn't click.
+- Tunable `@export`s: `voice_gain` (0.22), `master_gain` (0.9), `attack`
+  (0.006), `decay_tau` (0.28). Waveform is a plain sine — a deliberate
+  placeholder; the owner replaces the sound later.
 
 ### Bug found and fixed
 
-Notes triggered but produced **silence**. Diagnosed by instrumenting the chain
-(input → bus → synth → output) and measuring the actual output peak, which read
-a flat `0.0`. Cause: the envelope returns `0.0` at the very start of the attack
-ramp (age 0), and the voice-cleanup check `if env <= 0.0: free the voice`
-couldn't tell that apart from the `0.0` at the *end* of the decay — so every
-voice was freed on its first sample. Fixed by only freeing past the attack:
-`if env <= 0.0 and _age[v] >= attack`. Everything upstream was correct.
+Notes triggered but produced **silence** (measured output peak flat `0.0`). The
+envelope returns `0.0` at the start of the attack ramp (age 0), and the
+voice-cleanup check `if env <= 0.0: free the voice` couldn't tell that apart
+from the `0.0` at the *end* of the decay — so every voice was freed on its first
+sample. Fixed with `if env <= 0.0 and _age[v] >= attack`.
 
 ### Latency
 
-The generator buffer is the play-to-hear latency (the fill keeps it full, so a
-new note waits behind whatever is queued). Reduced `BUFFER_LENGTH` from
-**0.1 s → 0.04 s** (~100 ms → ~40 ms) — over two frames of dropout margin at
-60 fps while feeling responsive. Godot's own driver output latency (~15 ms
-default) and one frame add on top. Lower the const toward ~0.02 for more
-snap at the risk of crackle.
+`BUFFER_LENGTH` reduced **0.1 s → 0.04 s** (~100 ms → ~40 ms) — over two frames
+of dropout margin at 60 fps while feeling responsive. Lower toward ~0.02 for
+more snap at the risk of crackle.
 
 **Bluetooth latency is parked**, not solved: BT codecs add ~100–300 ms
-downstream of Godot, unreachable by any synth-side lever. A calibration *offset*
+downstream of Godot, unreachable by any synth-side lever. A calibration offset
 could only realign timing *judgment*, not make sound arrive sooner — and it's
-only worth building if `timing_matters` is ever unshelved (the design currently
-rejects rhythm-sync, §6/§11). The Step 2 ring is the real mitigation: instant
-visual feedback that masks the felt lag.
+only worth building if `timing_matters` is ever unshelved (rhythm-sync is
+rejected, §6/§11). The Step 2 ring is the real mitigation: instant visual
+feedback masking the felt lag.
 
 ---
 
 ## Step 2 — the visible note
 
-### What was built
-
 - **`scripts/music/note_colors.gd`** (`NoteColors`) — a **pure** static helper
-  alongside `note_names.gd` and `melody_matcher.gd` (§4 pure seam: no nodes, no
-  signals, unit-testable without the engine). Implements §6's "colour is
-  load-bearing" rule: **pitch class → hue** (the twelve semitones wrap the hue
+  alongside `note_names.gd`/`melody_matcher.gd` (§4). Implements §6's "colour is
+  load-bearing" rule: **pitch class → hue** (twelve semitones wrap the hue
   wheel), **octave → brightness**. `color_for_midi(midi) -> Color`. Every note
-  visual in the game routes through this one mapping.
+  visual routes through this one mapping.
 - **`scenes/fx/note_ring.gd`** (`NoteRing`) — a self-contained Node2D that
-  expands and fades over ~0.5 s, then frees itself. **Ease-out cubic** radius
-  (fast at the attack, slowing as it fades, to match the sound's shape, §7.4).
-  Purely presentational — it never decides what a note affects. Colour from
-  `NoteColors`.
+  expands (ease-out cubic radius, fast at the attack then slowing, §7.4) and
+  fades over ~0.5 s, then frees itself. Purely presentational.
 - **`autoload/note_visuals.gd`** (`NoteVisuals`) — listens to
-  `NoteBus.note_played` (symmetric with Synth) and spawns a ring at the note's
-  world position. Rings live in world space and stay put as the player moves on.
+  `NoteBus.note_played` and spawns a ring at the note's world position. Rings
+  live in world space and stay put as the player moves on.
 
-### Colour mapping specifics
+Colour specifics: default `HUE_OFFSET` 0 → **C sits at hue 0 (red)**, ascending;
+`SATURATION` 0.85; octave brightness `BASE_VALUE` 0.9 at `REFERENCE_OCTAVE` 4,
+`VALUE_PER_OCTAVE` 0.08, clamped `[0.5, 1.0]`. The five starter notes land on
+five distinct hues, confirmed on screen (C red → D yellow → E green → G blue →
+A violet).
 
-- Default `HUE_OFFSET` = 0.0 → **C sits at hue 0 (red)**, ascending. A single
-  const rotates the whole language. (This intentionally does *not* match the
-  hand-authored `color_sequence` in `door_test_01.json`, which is owner data
-  read by nothing, §5 — the code follows §6's rule.)
-- `SATURATION` 0.85; octave brightness from `BASE_VALUE` 0.9 at
-  `REFERENCE_OCTAVE` 4, `VALUE_PER_OCTAVE` 0.08, clamped `[0.5, 1.0]`.
-- The five starter notes (C D E G A, all octave 4) land on five distinct hues at
-  equal brightness.
+---
 
-### Ring tunables (`note_ring.gd`)
+## Step 3 — the note bar
 
-`max_radius` (22 px), `duration` (0.5 s), `line_width` (2 px). Drawn above room
-tiles (`z_index` 5), not antialiased for pixel-art crispness, alpha fades
-linearly while the radius eases.
+- **`scenes/ui/note_bar.gd`** (`NoteBar`, a `Control` under the `UI`
+  CanvasLayer) — one slot per palette note along the bottom: a **colour swatch**
+  (via `NoteColors`) with the **note name** centred beneath (`NoteNames.to_name`,
+  computed — no literal note names in code). **Flashes** a slot toward white when
+  its note plays (matched by midi), fading over `flash_time`. Presentational
+  only. Confirmed on screen; colour-first / name-second reads as intended (§7.6).
+- Tunables: `slot_size` (28×24), `slot_gap` (4), `margin_bottom` (6),
+  `flash_time` (0.18).
+
+---
+
+## Step 4 — the resonator
+
+- **`scenes/objects/resonator.gd`** (`Resonator`, a Node2D) — a block tuned to a
+  palette **slot** (not a pitch, §3 corollary), resolving its pitch via
+  `Palette.midi_for_slot(slot)`. On a played note it **gates on
+  `NoteBus.effects_enabled()` first** — the first thing in the game to do so —
+  then checks range against the bus's `source`: **right note → brightens to full
+  colour**; **wrong note → a small decaying shake**. At rest it shows a dim
+  version of its colour so its tuning still reads (§6).
+- Three test resonators are spawned from `main.gd` (a script edit, no `.tscn`
+  change), tuned to slots 0/2/4 (C/E/A). Confirmed on screen: correct note
+  lights, wrong note shakes, out of range does nothing.
+- Tunables: `hear_radius` (40), `light_time` (0.45), `shake_time` (0.2),
+  `shake_pixels` (2).
 
 ---
 
 ## Cross-cutting: rules honored
 
 - **The one rule (§3):** no pitch/melody in any `.gd`. The verification grep is
-  clean — the only literal note names are in `tests/` and `note_names.gd`
-  doc-comments, both exempt.
+  clean — literal note names only in `tests/` and `note_names.gd` doc-comments,
+  both exempt.
 - **`effects_enabled()` (§6):** audio and visuals always play; only gameplay
-  effects gate. Neither Synth nor NoteVisuals checks it — that check belongs on
-  the Step 4 resonator, the first thing that produces a gameplay-visible effect.
+  effects gate. Synth, NoteVisuals and NoteBar do not check it; the resonator
+  does — the milestone's first and only gated effect.
 - **Categories are not in M1:** every note gets the same generic treatment.
 - **Nothing built ahead:** no doors, collection, melody locks, instrument-state
   entry, saves, or art.
@@ -150,15 +152,13 @@ linearly while the radius eases.
 
 ## Testing & verification
 
-- Unit tests (`tests/test_melody_matcher.gd`, run headless): **29 passed, 0
-  failed.** Added this milestone: `test_frequencies` (protects tuning, since the
-  synth relies on `to_frequency()`) and `test_note_colors` (pins the colour
-  mapping's invariants — same pitch class shares a hue, different pitch class
-  differs, higher octave is brighter).
+- Unit tests (`tests/test_melody_matcher.gd`, headless): **29 passed, 0 failed.**
+  Added this milestone: `test_frequencies` (protects tuning) and
+  `test_note_colors` (pins the colour mapping's invariants). Steps 3–4 added no
+  new pure functions, so no new tests — `NoteBar` and `Resonator` are nodes
+  reusing already-tested helpers.
 - `godot --headless --import`: clean, no parse errors.
-- **Step 1 audio:** confirmed audible on device by the owner.
-- **Step 2 visuals:** implemented and passing the automated checks, but not yet
-  eyeballed on screen — a rendered ring can only be verified by running it.
+- All four steps confirmed on device/screen by the owner.
 
 ---
 
@@ -173,6 +173,8 @@ autoload/synth.gd
 autoload/note_visuals.gd
 scripts/music/note_colors.gd
 scenes/fx/note_ring.gd
+scenes/ui/note_bar.gd
+scenes/objects/resonator.gd
 scenes/player/note_input.gd
 ```
 
@@ -181,30 +183,37 @@ scenes/player/note_input.gd
 ```
 project.godot                    # autoloads: + Palette, Synth, NoteVisuals
 scenes/player/player.tscn        # added NoteInput child under Player
+scenes/main.tscn                 # added NoteBar under the UI CanvasLayer
+scenes/main.gd                   # spawns three test resonators
 tests/test_melody_matcher.gd     # + test_frequencies, + test_note_colors
 ```
 
-Autoload order is now: `InputConfig, NoteBus, MelodyLibrary, Palette, Synth,
-NoteVisuals`.
+Autoload order: `InputConfig, NoteBus, MelodyLibrary, Palette, Synth,
+NoteVisuals`. Committed and pushed as `b3b8923` on `main`.
 
 ---
 
-## What's left in M1
+## M1 outcome — the gate
 
-- **Step 3 — the note bar:** five slots along the bottom of the screen, colour
-  first and note name second, flashing on press (§7.6).
-- **Step 4 — the resonator:** a block tuned to a palette *slot* (not a pitch).
-  Correct note in range lights in its colour; wrong note gives a small dull
-  shake. Must respect `effects_enabled()` — the first thing in the game that
-  does (§7.5).
-- **The gate:** once all four exist, the real question is whether playing feels
-  good on its own. If it doesn't, the core design gets rethought before anything
-  is built on top.
+**Build: complete and verified.** No mechanical or visual issues; every step
+runs and behaves as specified, confirmed by the owner.
 
-## How to run
+**Gate: deferred, not failed.** M1's gate (§7) asks whether *sitting in a gray
+room playing notes feels good on its own*. At the current placeholder fidelity
+that question can't be answered honestly: in a game whose only verb is playing a
+note, the feel is bound up in the *sound*, and the synth is a deliberate plain
+sine — a stand-in for the real instrument voices the owner composes later (the
+synth was built to swap out behind the bus, §7.1). So the aesthetic verdict
+waits on real audio.
 
-```
-godot --headless --import                                # parse check
-godot --headless --script tests/test_melody_matcher.gd    # unit tests
-godot .                                                    # play; 1–5 = notes
-```
+Important distinction, so the plan stays intact: this is a **sound-fidelity
+deferral, not a failure of the placeholder-first bet.** The mechanics and the
+box-and-colour visuals are fine at placeholder fidelity — the owner's
+assessment. The placeholder-first philosophy still holds, and **M3 still relies
+on it** (placeholder everything, a stranger getting the loop in 5–10 min). What
+M1 shows is narrower: "does *playing a note* feel good" is an audio question a
+sine can't settle; "does the *structure* work" (M3) is a different question that
+placeholders can still answer.
+
+**Marked complete** on 2026-09-12 by owner decision. The feel judgment is
+revisited once real instrument sound exists.

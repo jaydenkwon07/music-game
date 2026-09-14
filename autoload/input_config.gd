@@ -14,6 +14,12 @@ extends Node
 
 enum Layout { WASD, ARROWS }
 
+## Emitted when the instrument-state octave shift changes — via `[` / `]`, or the
+## reset on entering the instrument state. Presentational listeners (the keyboard
+## widget's octave indicator) redraw from this rather than polling every frame
+## (§4, prefer signals).
+signal octave_changed(shift: int)
+
 const MOVEMENT := {
 	Layout.WASD: {
 		"move_up": KEY_W,
@@ -126,13 +132,20 @@ func octave_shift() -> int:
 ## Shift the piano octave, clamped. octave_matters is false in M2 so this changes
 ## nothing mechanically — it just stops one fixed octave feeling like a cage.
 func shift_octave(delta: int) -> void:
-	_octave_shift = clampi(_octave_shift + delta, -OCTAVE_SHIFT_LIMIT, OCTAVE_SHIFT_LIMIT)
+	var next := clampi(_octave_shift + delta, -OCTAVE_SHIFT_LIMIT, OCTAVE_SHIFT_LIMIT)
+	if next == _octave_shift:
+		return  # already at the clamp — no change, no signal
+	_octave_shift = next
+	octave_changed.emit(_octave_shift)
 
 
 ## Reset to the base octave — called when entering the instrument state so a door
 ## attempt always starts from a known place (§4.2).
 func reset_octave() -> void:
+	if _octave_shift == 0:
+		return
 	_octave_shift = 0
+	octave_changed.emit(_octave_shift)
 
 
 # --- Loading & registration ---

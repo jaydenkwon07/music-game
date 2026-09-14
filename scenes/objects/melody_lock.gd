@@ -33,6 +33,10 @@ func arm() -> void:
 	_attempt.clear()
 	_armed = true
 	progress_changed.emit(0, total())
+	# Mirror onto the bus so the keyboard's melody strip can show this door's
+	# structure without holding a reference to the door or this lock (§4).
+	NoteBus.melody_armed.emit(_target.duplicate())
+	NoteBus.melody_progress.emit(0, total())
 
 
 ## Stop listening and clear the attempt. Idempotent.
@@ -65,8 +69,10 @@ func _on_note_played(midi: int, _source: Vector2) -> void:
 			disarm()
 		MelodyMatcher.Result.IN_PROGRESS:
 			progress_changed.emit(int(evaluation["progress"]), total())
+			NoteBus.melody_progress.emit(int(evaluation["progress"]), total())
 		MelodyMatcher.Result.MISMATCH:
 			# No penalty (§6): the buffer just resets and the gems fall dark.
 			mismatch.emit()
 			_attempt.clear()
 			progress_changed.emit(0, total())
+			NoteBus.melody_progress.emit(0, total())

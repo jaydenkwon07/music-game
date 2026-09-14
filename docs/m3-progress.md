@@ -1,8 +1,10 @@
 # M3 — The vertical slice · Progress record
 
-**Status:** built; headless verification green. **The milestone gate (§11) — a
-fresh player getting the loop unprompted in 5–10 min — is pending the owner's
-run-verify.** **Date:** 2026-09-14. Runs clean on Godot 4.7.2.
+**Status:** built; headless verification green. The **instrument-state keyboard
+widget addendum** (below) is built too, and it is what makes the gate actually
+*performable* — a player can now see which key plays which owned note. **The
+milestone gate (§11) — a fresh player getting the loop unprompted in 5–10 min — is
+pending the owner's run-verify.** **Date:** 2026-09-14. Runs clean on Godot 4.7.2.
 **Spec:** `docs/m3-spec.md` (the buildable expansion of the design doc's M3
 section and §§3.6, 3.7, 7.4, 7.5).
 
@@ -32,12 +34,13 @@ land — is the owner's to answer on `godot .`.
 
 Four fixed-screen rooms, two doors, one deliberate backtrack:
 
-- **Room A (Threshold, start):** collect `n_step` (E); **D2** (`door_tutorial`,
-  `[E]`) gates the east exit and opens at once with the note just collected; **D1**
+- **Room A (Threshold, start):** collect `n_break` (C); **D2** (`door_tutorial`,
+  `[C]`) gates the east exit and opens at once with the note just collected; **D1**
   (`door_backtrack`, `[C,D,E]`) gates the north exit to the reward and cannot be
   played yet. A chime beside each door teaches its melody.
 - **Room B (Gallery):** collect `n_mend` (D); free gaps west→A and east→C.
-- **Room C (Deep):** collect `n_break` (C) — the note D1 needs; dead-ends back to B.
+- **Room C (Deep):** collect `n_step` (E) — the note that completes D1's `[C,D,E]`;
+  dead-ends back to B.
 - **Room D (Reward):** reachable only after returning to A and opening D1.
 
 The forced path teaches pickup → chime → door → transition in order, then makes
@@ -99,16 +102,64 @@ scripts/validate_rooms.py       [Step 5] solvability validator
 .github/workflows/validate.yml  [Step 5] CI
 ```
 
-The pure seam (`note_names`, `melody_matcher`, `note_colors`), the bus
-(`NoteBus`), `MelodyLock`, `NoteInventory` and the input layer were **not**
-changed — M3 added no matching logic and no new bus signals.
+The vertical-slice steps above changed **no** matching logic and added **no** bus
+signals — the pure seam (`note_names`, `melody_matcher`, `note_colors`),
+`NoteInventory` and the input layer were untouched. (The keyboard-widget addendum
+below then added two `NoteBus` signals and one `InputConfig` signal — presentational
+mirrors only; still no matching logic.)
+
+---
+
+## M3 addendum — the instrument-state keyboard widget
+
+Built after the slice, because the slice exposed the hole: entering a door put the
+player in the instrument state with **no way to know which physical key plays which
+owned note**, so a fresh player could not perform a door melody at all. This is the
+piece the play-through gate needed. Built in three owner-run steps, presentational
+throughout — it reads state and decides nothing.
+
+- **The widget** — `scenes/ui/instrument_keyboard.gd`, a `Control` added in code as
+  a child of `InstrumentOverlay` (no `.tscn` touched). One octave, not the full
+  17-key range: seven white + five black slots in true piano geometry, the real gaps
+  at E–F and B–C falling out of the layout. The twelve slots are exactly the twelve
+  collectible pitch classes (§6).
+- **Step 1 — static.** Owned pitch classes filled with the note's category colour
+  (`NoteRegistry → NoteColors`), unowned as outlines; each owned slot labelled with
+  its physical key letter via `DisplayServer.keyboard_get_label_from_physical()` —
+  never a hardcoded letter (§5). Rebuilds on `NoteInventory.note_collected`.
+- **Step 2 — live feedback.** A struck key flashes (keyed on pitch class off
+  `NoteBus.note_played`, in step with the note bar); an `oct N` indicator tracks
+  `[` / `]` and the reset-on-entry via a new `InputConfig.octave_changed` signal,
+  and the whole widget dims/brightens with octave for free (NoteColors maps octave
+  to brightness).
+- **Step 3 — melody strip.** Above the keys, one marker per target note, category-
+  tinted and lit left-to-right by progress — the same colours the door's gems use
+  (`Door.CATEGORY_REP_INDEX`), so target and instrument sit adjacent. Structure only:
+  count, categories, progress, never which notes (§6). Driven by two new `NoteBus`
+  signals — `melody_armed(targets)`, `melody_progress(progress, total)` — that
+  `MelodyLock` mirrors, so the persistent widget needs no door or lock reference.
+
+**Pure geometry seam.** The one-octave key layout is a pure helper
+(`scripts/music/instrument_keyboard_layout.gd`, `class_name InstrumentKeyboardLayout`)
+— white/black split and slot rects from a white-key size, no nodes — unit-tested in
+`tests/test_instrument_keyboard_layout.gd` (21 assertions). The drawing stays in the
+widget.
+
+**Data fix — start with C.** The start room now grants `n_break` (C), not `n_step`
+(E), and the tutorial door wants `[C]`; Room C now grants E. So the first note owned
+lands on the leftmost white key (`A` = C) instead of a middle key, and the piano
+reads from its natural left edge. Data only — `data/rooms.json`,
+`data/rooms/room_a.json`, `room_c.json`, `data/melodies/door_tutorial.json`; no code,
+§3 intact. Which pitch class maps to which *category* is still the §9 owner call and
+was untouched — only which room grants which note changed.
 
 ---
 
 ## Verification
 
-- **Unit:** 32 assertions in `tests/test_melody_matcher.gd` still pass (the pure
-  seam was untouched).
+- **Unit:** 53 assertions pass — 32 in `tests/test_melody_matcher.gd` (the pure
+  seam, untouched) and 21 in `tests/test_instrument_keyboard_layout.gd` (the new
+  keyboard-geometry seam).
 - **§3 one-rule guard:** clean — no pitch in any `.gd` outside the two exempt files
   (M3's new code refers to notes and melodies only by id).
 - **Validator:** `OK — 4 rooms reachable, 2 doors solvable, ramp holds.`
@@ -153,5 +204,6 @@ changed — M3 added no matching logic and no new bus signals.
   chime is built.
 - **No note ability behaviours, combat, art, or the cold-open darkness** — all M4+/
   M5, deliberately absent (spec §2).
-- **`CLAUDE.md` §2/§8 and `README.md` are not yet updated** — that promotion waits
-  on the owner's play-through, per spec Step 5 and §12 of `CLAUDE.md`.
+- **`CLAUDE.md` §2 is now current** — it records the slice and the keyboard-widget
+  addendum. **§8 and `README.md` still wait** on the owner's play-through before M3
+  is promoted to complete, per §12 of `CLAUDE.md`.

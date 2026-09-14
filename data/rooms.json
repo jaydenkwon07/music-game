@@ -3,7 +3,7 @@
   "rooms": {
     "room_a": {
       "display_name": "Threshold",
-      "notes": ["n_step"],
+      "notes": ["n_break"],
       "entries": ["spawn", "from_b", "from_d"],
       "exits": [
         { "to": "room_b", "to_entry": "from_a", "door": "door_tutorial" },
@@ -21,7 +21,7 @@
     },
     "room_c": {
       "display_name": "Deep",
-      "notes": ["n_break"],
+      "notes": ["n_step"],
       "entries": ["from_b"],
       "exits": [
         { "to": "room_b", "to_entry": "from_c" }

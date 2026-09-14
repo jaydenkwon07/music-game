@@ -33,6 +33,10 @@ func _ready() -> void:
 	_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_scrim.color = Color(scrim_color, 0.0)
 	add_child(_scrim)
+	# The keyboard widget draws over the scrim and shows the player which key
+	# plays which owned note (M3 addendum). Added here so all instrument-state
+	# visuals live on this one layer; it toggles itself on NoteBus state.
+	add_child(InstrumentKeyboard.new())
 	NoteBus.instrument_state_changed.connect(_on_instrument_state_changed)
 	set_process(false)
 

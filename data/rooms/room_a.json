@@ -17,7 +17,7 @@
     { "at": [15, 4], "to_room": "room_b", "to_entry": "from_a", "door": "door_tutorial" },
     { "at": [8, 0], "to_room": "room_d", "to_entry": "from_a", "door": "door_backtrack" }
   ],
-  "pickups": [ { "note_id": "n_step", "at": [3, 6] } ],
+  "pickups": [ { "note_id": "n_break", "at": [3, 6] } ],
   "chimes": [
     { "melody_id": "door_tutorial", "at": [11, 6] },
     { "melody_id": "door_backtrack", "at": [5, 3] }

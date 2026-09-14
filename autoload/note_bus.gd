@@ -17,6 +17,17 @@ signal note_played(midi: int, source: Vector2)
 ## gameplay effects must ignore note_played.
 signal instrument_state_changed(active: bool)
 
+## A door's MelodyLock armed. `targets` is the target melody as MIDI, so a
+## presentational listener — the keyboard widget's melody strip — can show the
+## door's STRUCTURE beside the keyboard: how many notes and their categories,
+## never which specific notes (§6, the same rule the door gems obey). Mirrored
+## onto the bus so that listener needs no reference to the door or the lock.
+signal melody_armed(targets: Array)
+
+## The armed melody's confirmed-note count changed — advanced by a right note, or
+## reset to 0 by a wrong one. Mirrors MelodyLock.progress_changed onto the bus.
+signal melody_progress(progress: int, total: int)
+
 var instrument_state_active: bool = false
 
 

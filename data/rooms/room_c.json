@@ -16,6 +16,6 @@
   "links": [
     { "at": [0, 4], "to_room": "room_b", "to_entry": "from_c" }
   ],
-  "pickups": [ { "note_id": "n_break", "at": [8, 4] } ],
+  "pickups": [ { "note_id": "n_step", "at": [8, 4] } ],
   "chimes": []
 }

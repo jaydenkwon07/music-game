@@ -19,6 +19,14 @@ extends Interactable
 var _collected: bool = false
 
 
+func _ready() -> void:
+	super._ready()
+	# Rooms are re-instanced on every transition (§6.3a); a note already taken must
+	# not reappear on the return trip. WorldState remembers this, keyed by note id.
+	if WorldState.is_pickup_taken(note_id):
+		queue_free()
+
+
 ## Only offer to be collected while it still holds an uncollected note.
 func can_interact() -> bool:
 	return not _collected
@@ -29,6 +37,7 @@ func interact(_player: Node2D) -> void:
 	# a duplicate pickup stays put rather than silently disappearing.
 	if NoteInventory.collect(note_id):
 		_collected = true
+		WorldState.mark_pickup_taken(note_id)
 		queue_free()
 
 

@@ -1,0 +1,39 @@
+{
+  "start": { "room": "room_a", "entry": "spawn" },
+  "rooms": {
+    "room_a": {
+      "display_name": "Threshold",
+      "notes": ["n_step"],
+      "entries": ["spawn", "from_b", "from_d"],
+      "exits": [
+        { "to": "room_b", "to_entry": "from_a", "door": "door_tutorial" },
+        { "to": "room_d", "to_entry": "from_a", "door": "door_backtrack" }
+      ]
+    },
+    "room_b": {
+      "display_name": "Gallery",
+      "notes": ["n_mend"],
+      "entries": ["from_a", "from_c"],
+      "exits": [
+        { "to": "room_a", "to_entry": "from_b" },
+        { "to": "room_c", "to_entry": "from_b" }
+      ]
+    },
+    "room_c": {
+      "display_name": "Deep",
+      "notes": ["n_break"],
+      "entries": ["from_b"],
+      "exits": [
+        { "to": "room_b", "to_entry": "from_c" }
+      ]
+    },
+    "room_d": {
+      "display_name": "Reward",
+      "notes": [],
+      "entries": ["from_a"],
+      "exits": [
+        { "to": "room_a", "to_entry": "from_d" }
+      ]
+    }
+  }
+}

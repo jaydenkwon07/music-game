@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Music Game"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/world.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [autoload]
@@ -25,6 +25,8 @@ NoteBus="*res://autoload/note_bus.gd"
 MelodyLibrary="*res://autoload/melody_library.gd"
 NoteRegistry="*res://autoload/note_registry.gd"
 NoteInventory="*res://autoload/note_inventory.gd"
+WorldState="*res://autoload/world_state.gd"
+RoomGraph="*res://autoload/room_graph.gd"
 Synth="*res://autoload/synth.gd"
 NoteVisuals="*res://autoload/note_visuals.gd"
 

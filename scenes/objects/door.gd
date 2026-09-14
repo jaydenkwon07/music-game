@@ -1,9 +1,11 @@
 class_name Door
 extends Interactable
-## A melody-locked door (§5.10). Configured with only a melody id (§3); it composes
-## a MelodyLock and shows the melody's STRUCTURE as gems — how many notes, their
-## categories, and progress so far — at top-down scale. It never shows which notes
-## (that is learned elsewhere; M2's gems are the only hint, D3).
+## A melody-locked door (§5.10, §6.6). Configured with only a melody id (§3); it
+## composes a MelodyLock and shows the melody's STRUCTURE as gems — how many notes,
+## their categories, and progress so far — at top-down scale. It never shows which
+## notes: as of M3 the gems tint by category only (D-M3-3), and the specific melody
+## is learned from a MelodyChime in the world (§6.5). It gates a real room exit —
+## opening disables its blocking body so the RoomLink behind it is reachable (§3.7).
 ##
 ## Interacting (space, via the Interactor) enters the instrument state and arms the
 ## lock. Play the melody: gems light one at a time; a wrong note resets them with a
@@ -16,6 +18,12 @@ extends Interactable
 @export var gem_margin: float = 5.0
 ## Seconds the soft mismatch cue lasts.
 @export var mismatch_time: float = 0.35
+
+## Gems show a note's CATEGORY, not the note itself (D-M3-3): every gem in a
+## category uses this one representative index within the category's hue arc, so
+## the door reveals which categories are involved (structure) but never which
+## specific note (content — that now lives on the chime, §6.5).
+const CATEGORY_REP_INDEX := 1
 
 var _lock: MelodyLock
 var _targets: Array = []
@@ -43,6 +51,12 @@ func _ready() -> void:
 
 	_add_blocker()
 	NoteBus.instrument_state_changed.connect(_on_instrument_state_changed)
+
+	# Rooms are re-instanced on every transition (§6.3a); a door the player already
+	# opened must come back open, or the required return to Room A shows it locked
+	# again. WorldState remembers this, keyed by melody id.
+	if WorldState.is_door_open(melody_id):
+		_open_immediately()
 
 
 ## A closed door blocks; interacting is pointless once it is open.
@@ -84,10 +98,21 @@ func _on_mismatch() -> void:
 
 func _on_unlocked() -> void:
 	_open = true
-	# Stop blocking so M3 rooms behind the door become reachable.
+	# Stop blocking so the room behind the door becomes reachable.
 	if _blocker != null:
 		_blocker.set_deferred("disabled", true)
+	# Remember it across transitions, so the return trip finds it open (§6.3a).
+	WorldState.mark_door_open(melody_id)
 	NoteBus.set_instrument_state(false)
+	queue_redraw()
+
+
+## Start open with no instrument-state round trip — used when WorldState says this
+## door was opened on an earlier visit to the room.
+func _open_immediately() -> void:
+	_open = true
+	if _blocker != null:
+		_blocker.set_deferred("disabled", true)
 	queue_redraw()
 
 
@@ -134,7 +159,7 @@ func _draw_gems() -> void:
 	var y := -slab_size.y * 0.5 - gem_margin
 	var flashing := _mismatch_flash > 0.0
 	for i in _total:
-		var base := NoteRegistry.color_for_midi(int(_targets[i]) if i < _targets.size() else -1)
+		var base := _gem_category_color(int(_targets[i]) if i < _targets.size() else -1)
 		var col: Color
 		if flashing:
 			# Soft "no": the whole row falls to a dull desaturated grey briefly.
@@ -146,3 +171,16 @@ func _draw_gems() -> void:
 		var pos := Vector2(start_x + i * spacing, y)
 		draw_circle(pos, gem_radius, col)
 		draw_arc(pos, gem_radius, 0.0, TAU, 16, Color(0.0, 0.0, 0.0, 0.5), 1.0)
+
+
+## The representative colour of a target note's CATEGORY (D-M3-3): resolve the
+## note's category via NoteRegistry, then colour it at the category's fixed
+## representative index — so the gem shows the family (warm / green / cool) and
+## progress, never which of the four notes in that family it is. An unassigned
+## pitch class falls back to NEUTRAL.
+func _gem_category_color(midi: int) -> Color:
+	var note := NoteRegistry.by_midi(midi)
+	if note.is_empty():
+		return NoteColors.NEUTRAL
+	var octave := int(floor(float(midi) / 12.0)) - 1
+	return NoteColors.color(note["category"], CATEGORY_REP_INDEX, octave)

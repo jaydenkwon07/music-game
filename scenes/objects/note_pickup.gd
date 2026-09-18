@@ -12,15 +12,25 @@ extends Interactable
 ## .tscn, until rooms become real scenes at M3.
 
 @export var note_id: String = ""
-## Drawn radius. The interact range is Interactable.radius, set a little larger so
-## the note is collectable from contact, not pixel-perfect overlap.
+## Diamond half-extent (point-to-centre). Its SILHOUETTE — a floating diamond, not
+## a circle — is what distinguishes a takeable pickup from a struck chime, so the
+## two never read as the same object in the dark or colourblind (§6, D-M4-7). The
+## interact range is Interactable.radius, set a little larger so the note is
+## collectable from contact, not pixel-perfect overlap.
 @export var draw_radius: float = 12.0
 ## The pickup IS a light (§5.2): a bright pool in its own note colour, so it
 ## announces itself before the player can see the floor around it (§5.4).
 @export var light_radius: float = 60.0
 @export var light_energy: float = 0.8
+## Floating motion, tuned by feel (§10). The spin and bob live entirely in _draw —
+## the node transform, and so the collision shape and interact_point, never move —
+## so "clearly takeable" costs nothing in interaction geometry.
+@export var spin_speed: float = 1.2   ## radians/sec
+@export var bob_speed: float = 2.4    ## radians/sec
+@export var bob_amplitude: float = 2.0  ## pixels
 
 var _collected: bool = false
+var _t: float = 0.0
 
 
 func _ready() -> void:
@@ -31,6 +41,12 @@ func _ready() -> void:
 		queue_free()
 		return
 	add_child(Lighting.make_light(light_radius, light_energy, _note_color(), false))
+
+
+## Advance the float; the shape is redrawn each frame, the node never moves.
+func _process(delta: float) -> void:
+	_t += delta
+	queue_redraw()
 
 
 func _note_color() -> Color:
@@ -55,5 +71,17 @@ func interact(_player: Node2D) -> void:
 
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, draw_radius, _note_color())
-	draw_arc(Vector2.ZERO, draw_radius, 0.0, TAU, 24, EnvPalette.with_alpha("ink", 0.5), 1.0)
+	# A diamond (a square on its corner), spun and bobbing so it reads as a floating,
+	# takeable thing — a silhouette nothing else in the world shares (§6, D-M4-7).
+	# Both animations are applied to the drawn points only; the node stays still.
+	var bob := Vector2(0.0, sin(_t * bob_speed) * bob_amplitude)
+	var spin := _t * spin_speed
+	var points := PackedVector2Array()
+	for k in 4:
+		var a := spin + float(k) * TAU / 4.0
+		points.append(bob + Vector2(cos(a), sin(a)) * draw_radius)
+	draw_colored_polygon(points, _note_color())
+	# Closed outline: repeat the first point so the polyline seals the last edge.
+	var outline := points.duplicate()
+	outline.append(points[0])
+	draw_polyline(outline, EnvPalette.with_alpha("ink", 0.5), 1.0)

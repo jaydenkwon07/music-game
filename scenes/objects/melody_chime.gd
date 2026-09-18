@@ -12,7 +12,16 @@ extends Interactable
 ## armed, so it can never advance a door. Presentational + audio only, no new art.
 
 @export var melody_id: String = ""
-@export var draw_radius: float = 10.0
+## Silhouette (§6, D-M4-7): a hanging vertical bar with a top mount, struck-looking
+## and deliberately NOT round, so a chime can never be mistaken for a takeable
+## pickup (a floating diamond) in the dark or colourblind. Vertical is the whole
+## point — that read is what a bare circle destroyed during M3 testing.
+@export var bar_width: float = 6.0
+@export var bar_height: float = 26.0
+@export var mount_width: float = 14.0
+@export var mount_height: float = 4.0
+## How far the sounding "sound wave" ring clears the bar when the chime is struck.
+@export var pulse_ring_radius: float = 20.0
 ## Seconds per beat; a note's on-screen/audible dwell is this times its rhythm.
 @export var beat: float = 0.32
 ## Seconds a single note's colour pulse lasts.
@@ -88,13 +97,25 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	# The crystal itself: cool stone, deliberately not a note colour so it reads as
-	# "a thing that sings", not as a note. (Silhouette differentiation is Step 4.)
-	draw_circle(Vector2.ZERO, draw_radius, EnvPalette.color("rock_lit"))
-	draw_arc(Vector2.ZERO, draw_radius, 0.0, TAU, 20, EnvPalette.with_alpha("ink", 0.5), 1.0)
+	# The chime itself: a hanging bar in cool stone, deliberately not a note colour
+	# so it reads as "a fixture that sings", not as a collectible. Its vertical
+	# silhouette is the differentiator (§6, D-M4-7). Centred on the origin so it
+	# aligns with the light and the interact point.
+	var mount := Rect2(-mount_width * 0.5, -bar_height * 0.5 - mount_height, mount_width, mount_height)
+	var bar := Rect2(-bar_width * 0.5, -bar_height * 0.5, bar_width, bar_height)
+	# While struck, the bar rings: its stone tints toward the sounding note's colour,
+	# brightest at onset. This is the only note colour the chime ever shows.
+	var body := EnvPalette.color("rock_lit")
+	if _pulse_t > 0.0 and pulse_time > 0.0:
+		body = body.lerp(_pulse_color, _pulse_t / pulse_time)
+	draw_rect(mount, EnvPalette.color("rock_high"), true)
+	draw_rect(mount, EnvPalette.with_alpha("ink", 0.5), false, 1.0)
+	draw_rect(bar, body, true)
+	draw_rect(bar, EnvPalette.with_alpha("ink", 0.5), false, 1.0)
 
-	# The pulse: a ring in the currently-sounding note's colour, brightest at onset.
+	# The pulse: a sound-wave ring in the sounding note's colour, clearing the bar,
+	# brightest at onset.
 	if _pulse_t > 0.0 and pulse_time > 0.0:
 		var intensity := _pulse_t / pulse_time
 		var ring := Color(_pulse_color, intensity)
-		draw_arc(Vector2.ZERO, draw_radius + 5.0, 0.0, TAU, 24, ring, 3.0)
+		draw_arc(Vector2.ZERO, pulse_ring_radius, 0.0, TAU, 24, ring, 2.0)

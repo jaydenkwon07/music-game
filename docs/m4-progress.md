@@ -1,7 +1,8 @@
 # M4 — Art direction and the first finished room · Progress
 
 **Status:** in progress. Steps 0–2 built; Step 3 has a procedural placeholder
-tileset; Steps 4–7 not started. **Date:** 2026-09-18.
+tileset; Step 4's silhouette fix (pickup + chime) is in; Steps 5–7 not started.
+**Date:** 2026-09-18.
 **Spec:** `docs/m4-spec.md`. **Gates:** both owner sign-offs approved
 (2026-09-18) — the §4 resolution decision (Q27) and the §3 art direction — so
 this work builds on 640×360 / 32×18 and the lithic-base / resonant-doors
@@ -73,13 +74,32 @@ M4 completion record — the §1 gate (a store-page still of Room A) is unmet, a
   asks for. Real tiles can replace this atlas with no other change — nothing
   outside `rock_tileset.gd` knows how a tile looks.
 
+### Step 4 — object silhouettes → pickup + chime done
+
+The live D-M4-7 defect: `note_pickup` and `melody_chime` both drew the same
+circle, so a chime read as a disabled pickup and a player missed clue delivery in
+M3 testing. Fixed by making the two types differ on three axes at once, so the
+read survives the dark overlay and the colourblind case (§6, §8 silhouette test):
+
+- **Pickup — a floating diamond.** A 4-point polygon in the bright note colour,
+  slowly spinning and bobbing. The animation lives entirely in `_draw` (a `_t`
+  accumulator + `queue_redraw`), so the Area2D collision and `interact_point`
+  never move — "clearly takeable" costs nothing in interaction geometry.
+- **Chime — a hanging vertical bar with a top mount**, struck-looking and not
+  round, in cool stone (`rock_lit`). When struck it rings: the bar tints toward
+  the sounding note's colour and a sound-wave ring clears it. That pulse is the
+  only note colour the chime ever shows — its resting form is stone (resonant
+  materials stay doors-only in Act 1, m4-spec §3.4).
+
+Player (a near-white square) and door gems (a geometric row set into the slab
+frame) already read as distinct types, so Step 4 is scoped to the pickup/chime
+pair — the actual defect. Owner-verified on `godot .`; the black-on-white
+silhouette test (§8) is the standing gate.
+
 ---
 
 ## What's not in (remaining M4)
 
-- **Step 4 — object silhouettes.** `note_pickup` and `melody_chime` **both still
-  draw circles** — the exact defect §8 / D-M4-7 flags (a chime reads as a disabled
-  pickup). Distinct silhouettes not started.
 - **Step 5 — Room A to completion** (the §1 store-page-still gate). Not started.
 - **Step 6 — motion pass** (§9: movement feel tuned by feel, camera lag, the
   door-unlock *event*, pickup-into-player light fold). Not started; the note-ring

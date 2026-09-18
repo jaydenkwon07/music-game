@@ -14,7 +14,8 @@ extends CanvasLayer
 ## at the end of a fade-out by the target, never by the current value alone.
 
 ## Scrim colour at full opacity. Cool and dark so the instrument state reads as a
-## distinct mode. Tune by feel.
+## distinct mode. Sourced from EnvPalette (rock_deep) in _ready so it stays in the
+## palette (§3); override in the inspector to tune by feel.
 @export var scrim_color: Color = Color(0.05, 0.06, 0.12)
 ## Opacity when fully faded in. Low enough that the world stays visible behind it.
 @export var max_alpha: float = 0.32
@@ -28,6 +29,7 @@ var _target_alpha: float = 0.0
 
 func _ready() -> void:
 	layer = 1
+	scrim_color = EnvPalette.color("rock_deep")
 	_scrim = ColorRect.new()
 	_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

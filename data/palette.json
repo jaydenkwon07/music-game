@@ -1,0 +1,32 @@
+{
+  "_note": "M4 locked palette (spec §3.3). Reference colours by NAME, never a hex literal in a scene or script (§3). The 12 saturated NOTE hues are NOT here — NoteColors generates them, and they are the only saturated colours in the game. Nothing in the environment may use a note hue. Budget: 32 total (7 rock + 12 note + player + resonant + UI).",
+
+  "rock": {
+    "rock_void": "#0D0B12",
+    "rock_deep": "#1A1723",
+    "rock_shadow": "#2B2738",
+    "rock_mid": "#40394F",
+    "rock_lit": "#5A5268",
+    "rock_high": "#7D7589",
+    "rock_edge": "#A8A0A6"
+  },
+
+  "player": "#D8D4E0",
+
+  "resonant": {
+    "brass": "#8A6A3C",
+    "wood": "#4A3428",
+    "copper": "#6B7F6A"
+  },
+
+  "ui": {
+    "ink": "#0D0B12",
+    "ground": "#1A1723",
+    "bright": "#D8D4E0"
+  },
+
+  "lighting": {
+    "_note": "cave_ambient is the CanvasModulate multiplier (§5.1): how dark the world goes before the additive lights bring it back. Lighter = more of the room readable unlit; darker = more dramatic. Tune this and the per-light energies together.",
+    "cave_ambient": "#6E6A78"
+  }
+}

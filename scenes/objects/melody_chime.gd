@@ -12,11 +12,18 @@ extends Interactable
 ## armed, so it can never advance a door. Presentational + audio only, no new art.
 
 @export var melody_id: String = ""
-@export var draw_radius: float = 5.0
+@export var draw_radius: float = 10.0
 ## Seconds per beat; a note's on-screen/audible dwell is this times its rhythm.
 @export var beat: float = 0.32
 ## Seconds a single note's colour pulse lasts.
 @export var pulse_time: float = 0.3
+## The chime carries its own light (§5.2, §5.4): a dim cool glow at rest so it
+## announces itself before terrain, pulsing up in each note's colour as it plays.
+@export var light_radius: float = 30.0
+@export var light_base_energy: float = 0.25
+@export var light_pulse_energy: float = 0.6
+
+var _light: PointLight2D
 
 # The colour pulse tracks its own phase, not a bare alpha (§10 envelope trap): a
 # fresh note sets _pulse_color and _pulse_t together, and _pulse_t only counts
@@ -29,6 +36,9 @@ var _generation: int = 0
 
 func _ready() -> void:
 	super._ready()
+	# Dim, cool, steady at rest so the chime is findable in the dark (§5.4).
+	_light = Lighting.make_light(light_radius, light_base_energy, EnvPalette.color("rock_high"), false)
+	add_child(_light)
 	set_process(false)
 
 
@@ -56,6 +66,7 @@ func _play_sequence() -> void:
 		NoteBus.play_note(midi, global_position)
 		_pulse_color = NoteRegistry.color_for_midi(midi)
 		_pulse_t = pulse_time
+		_light.color = _pulse_color
 		set_process(true)
 		queue_redraw()
 		var beats: float = float(rhythm[i]) if i < rhythm.size() else 1.0
@@ -65,20 +76,25 @@ func _play_sequence() -> void:
 func _process(delta: float) -> void:
 	if _pulse_t > 0.0:
 		_pulse_t = maxf(_pulse_t - delta, 0.0)
+		# Light brightest at onset, easing back toward the resting glow.
+		var intensity := _pulse_t / pulse_time if pulse_time > 0.0 else 0.0
+		_light.energy = lerpf(light_base_energy, light_pulse_energy, intensity)
 		queue_redraw()
 	else:
+		# Back to the resting cool glow between clues.
+		_light.color = EnvPalette.color("rock_high")
+		_light.energy = light_base_energy
 		set_process(false)
 
 
 func _draw() -> void:
-	# The crystal itself: a small cool-gray diamond, deliberately not a note colour
-	# so it reads as "a thing that sings", not as a note.
-	var body := Color(0.42, 0.46, 0.58)
-	draw_circle(Vector2.ZERO, draw_radius, body)
-	draw_arc(Vector2.ZERO, draw_radius, 0.0, TAU, 20, Color(0.0, 0.0, 0.0, 0.5), 1.0)
+	# The crystal itself: cool stone, deliberately not a note colour so it reads as
+	# "a thing that sings", not as a note. (Silhouette differentiation is Step 4.)
+	draw_circle(Vector2.ZERO, draw_radius, EnvPalette.color("rock_lit"))
+	draw_arc(Vector2.ZERO, draw_radius, 0.0, TAU, 20, EnvPalette.with_alpha("ink", 0.5), 1.0)
 
 	# The pulse: a ring in the currently-sounding note's colour, brightest at onset.
 	if _pulse_t > 0.0 and pulse_time > 0.0:
 		var intensity := _pulse_t / pulse_time
 		var ring := Color(_pulse_color, intensity)
-		draw_arc(Vector2.ZERO, draw_radius + 2.5, 0.0, TAU, 24, ring, 1.5)
+		draw_arc(Vector2.ZERO, draw_radius + 5.0, 0.0, TAU, 24, ring, 3.0)

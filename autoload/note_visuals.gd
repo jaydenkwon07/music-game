@@ -13,10 +13,15 @@ func _ready() -> void:
 func _on_note_played(midi: int, source: Vector2) -> void:
 	if midi < 0:
 		return
-	var scene := get_tree().current_scene
-	if scene == null:
+	# The world lives inside a SubViewport (§6), so current_scene is the outer
+	# container, not the game world; spawn the ring into the World host (group)
+	# instead, falling back to current_scene if it is ever run standalone.
+	var host := get_tree().get_first_node_in_group("world")
+	if host == null:
+		host = get_tree().current_scene
+	if host == null:
 		return
 	var ring := NoteRing.new()
-	scene.add_child(ring)
+	host.add_child(ring)
 	ring.global_position = source
 	ring.setup(NoteRegistry.color_for_midi(midi))

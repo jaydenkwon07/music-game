@@ -1,10 +1,11 @@
 extends CharacterBody2D
 ## 8-directional movement. No abilities, no notes — M0 is movement only.
 
-## Pixels per second. At 320x180 the screen is ~20 tiles wide, so 60 crosses
-## it in about five seconds. Tune this by feel; it is the single most
-## important number in the game right now.
-@export var max_speed: float = 80.0
+## Pixels per second. At 640x360 the screen is 32 tiles wide; 160 crosses it in
+## about four seconds. Doubled from M3's 80 in the §4 resolution migration so the
+## world (now 2× larger in world units) still plays at the same on-screen pace.
+## The single most important number to tune by feel — Step 6 revisits it.
+@export var max_speed: float = 160.0
 
 ## Seconds to reach full speed from rest, and to stop from full speed.
 ## Zero gives instant, Undertale-ish response. A little smoothing usually
@@ -12,7 +13,17 @@ extends CharacterBody2D
 @export var acceleration_time: float = 0.05
 @export var deceleration_time: float = 0.05
 
+## The player's light grows with collection (§5.3, D-M4-5): Pillar 2 made
+## mechanical — they see more of the world as they accumulate, and the cold open
+## is genuinely dark because they genuinely have nothing. Radius ramps from
+## LIGHT_MIN (zero notes) to LIGHT_MAX (a full twelve), by owned pitch classes.
+@export var light_min_radius: float = 50.0
+@export var light_max_radius: float = 120.0
+@export var light_energy: float = 0.8
+const LIGHT_FULL_COLLECTION := 12
+
 var facing: Vector2 = Vector2.DOWN
+var _light: PointLight2D
 
 
 func _ready() -> void:
@@ -21,6 +32,30 @@ func _ready() -> void:
 	# scene file, matching how main.gd instantiates its scaffolding.
 	add_to_group("player")
 	add_child(Interactor.new())
+	# The player is the palette's near-white (§3.3): the brightest thing on screen
+	# when unlit, so in the cold open they read as the only thing. Sourced from
+	# EnvPalette, never a hex literal here (§3).
+	var body := get_node_or_null("Body") as ColorRect
+	if body != null:
+		body.color = EnvPalette.color("player")
+	# The player carries their own light (§5.2), warm-white and shadow-casting so
+	# walls fall dark around them, and it grows as they collect (§5.3).
+	_light = Lighting.make_light(light_min_radius, light_energy, EnvPalette.color("bright"), true)
+	add_child(_light)
+	NoteInventory.note_collected.connect(_on_note_collected)
+	_refresh_light()
+
+
+func _on_note_collected(_note_id: String) -> void:
+	_refresh_light()
+
+
+## Radius scales linearly with owned pitch classes. slot_count() is the count the
+## inventory tracks today; when an owned-vs-equipped store exists it becomes the
+## owned total (§6, "owning is not wielding") with no change here.
+func _refresh_light() -> void:
+	var t := clampf(float(NoteInventory.slot_count()) / float(LIGHT_FULL_COLLECTION), 0.0, 1.0)
+	Lighting.set_radius(_light, lerpf(light_min_radius, light_max_radius, t))
 
 
 func _physics_process(delta: float) -> void:

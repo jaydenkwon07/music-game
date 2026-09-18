@@ -19,24 +19,25 @@ extends Control
 ## letter from DisplayServer.keyboard_get_label_from_physical(), so it stays
 ## correct on AZERTY/Dvorak (§5).
 
-## White-key size in internal (320x180) pixels, and the gap between whites. Small
-## by design: seven whites at ~10px is ~70px across — it must not dominate a frame
-## already crowded by the note bar (§ addendum size budget). Tune by feel.
-@export var white_size: Vector2 = Vector2(10.0, 24.0)
-@export var white_gap: float = 1.0
-@export var black_height: float = 14.0
+## White-key size in internal (640x360) pixels, and the gap between whites (all
+## doubled from M3 in the §4 resolution migration). Small by design: seven whites
+## at ~20px is ~140px across — it must not dominate a frame already crowded by the
+## note bar (§ addendum size budget). Tune by feel.
+@export var white_size: Vector2 = Vector2(20.0, 48.0)
+@export var white_gap: float = 2.0
+@export var black_height: float = 28.0
 ## Distance from the bottom of the frame to the bottom of the white row. Clears
-## the note bar (~30px tall at the bottom) so the two don't overlap.
-@export var margin_bottom: float = 34.0
+## the note bar (~60px tall at the bottom) so the two don't overlap.
+@export var margin_bottom: float = 68.0
 ## Seconds a slot stays lit after its note is struck (Step 2). Matches the note
 ## bar so a played note flashes both in step.
 @export var flash_time: float = 0.18
 ## Melody-strip geometry (Step 3): marker radius, gap between markers, and how far
 ## the strip sits above the keyboard's top edge. Matches the door gems' size so
 ## the door and the strip read as the same language.
-@export var marker_radius: float = 2.5
-@export var marker_gap: float = 2.0
-@export var strip_margin: float = 9.0
+@export var marker_radius: float = 5.0
+@export var marker_gap: float = 4.0
+@export var strip_margin: float = 18.0
 
 var _font: Font
 var _slots: Array = []            # cached InstrumentKeyboardLayout.slots(), local origin
@@ -47,7 +48,8 @@ var _melody_progress: int = 0     # confirmed notes so far, mirrored from the lo
 
 
 func _ready() -> void:
-	_font = ThemeDB.fallback_font
+	# The project's bitmap font (M4 §7), not the antialiasing engine fallback.
+	_font = get_theme_default_font()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_slots = InstrumentKeyboardLayout.slots(
@@ -156,16 +158,16 @@ func _draw_slot(slot: Dictionary, origin: Vector2) -> void:
 		# toward white for the flash_time after it is struck (Step 2). Only owned
 		# keys flash — an unowned key is silent, so it never sounds a note.
 		var flash_t := _flash[semitone] / flash_time if flash_time > 0.0 else 0.0
-		var fill := _color_for(semitone).lerp(Color.WHITE, flash_t * 0.8)
+		var fill := _color_for(semitone).lerp(EnvPalette.color("bright"), flash_t * 0.8)
 		draw_rect(rect, fill, true)
-		draw_rect(rect, Color(0.0, 0.0, 0.0, 0.6), false, 1.0)
+		draw_rect(rect, EnvPalette.with_alpha("ink", 0.6), false, 1.0)
 		_draw_key_letter(rect, semitone)
 	else:
 		# Empty outline: a faint fill so the piano shape still reads against the
 		# scrim, with the slot clearly unfilled.
-		var ground := Color(0.9, 0.92, 0.98, 0.10) if slot["white"] else Color(0.0, 0.0, 0.0, 0.28)
+		var ground := EnvPalette.with_alpha("bright", 0.10) if slot["white"] else EnvPalette.with_alpha("ink", 0.28)
 		draw_rect(rect, ground, true)
-		draw_rect(rect, Color(1.0, 1.0, 1.0, 0.22), false, 1.0)
+		draw_rect(rect, EnvPalette.with_alpha("bright", 0.22), false, 1.0)
 
 
 ## The colour for an owned slot: resolve the pitch class to a MIDI at the piano's
@@ -186,10 +188,10 @@ func _draw_octave_indicator(origin: Vector2) -> void:
 		return
 	var octave := InputConfig.piano_base_octave() + _octave_shift
 	var shifted := _octave_shift != 0
-	var ink := Color(0.75, 0.85, 1.0, 0.95) if shifted else Color(0.7, 0.72, 0.8, 0.7)
-	var baseline := Vector2(origin.x, origin.y - 3.0)
+	var ink := EnvPalette.with_alpha("bright", 0.95) if shifted else EnvPalette.with_alpha("rock_high", 0.7)
+	var baseline := Vector2(origin.x, origin.y - 6.0)
 	draw_string(
-		_font, baseline, "oct %d" % octave, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, ink
+		_font, baseline, "oct %d" % octave, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink
 	)
 
 
@@ -214,7 +216,7 @@ func _draw_melody_strip(origin: Vector2, row_w: float) -> void:
 		var col := base if i < _melody_progress else base.darkened(0.6)
 		var pos := Vector2(start_x + i * spacing, y)
 		draw_circle(pos, marker_radius, col)
-		draw_arc(pos, marker_radius, 0.0, TAU, 16, Color(0.0, 0.0, 0.0, 0.5), 1.0)
+		draw_arc(pos, marker_radius, 0.0, TAU, 16, EnvPalette.with_alpha("ink", 0.5), 1.0)
 
 
 ## A target note's CATEGORY colour, at the category's representative index — the
@@ -237,10 +239,10 @@ func _draw_key_letter(rect: Rect2, semitone: int) -> void:
 	var label := _key_label(semitone)
 	if label.is_empty():
 		return
-	var ink := Color(0.0, 0.0, 0.0, 0.85) if _is_white(semitone) else Color(1.0, 1.0, 1.0, 0.9)
-	var baseline := Vector2(rect.position.x, rect.end.y - 3.0)
+	var ink := EnvPalette.with_alpha("ink", 0.85) if _is_white(semitone) else EnvPalette.with_alpha("bright", 0.9)
+	var baseline := Vector2(rect.position.x, rect.end.y - 6.0)
 	draw_string(
-		_font, baseline, label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 8, ink
+		_font, baseline, label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 16, ink
 	)
 
 

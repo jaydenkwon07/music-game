@@ -16,6 +16,21 @@ var _current_room: Room = null
 
 
 func _ready() -> void:
+	# FX (note rings) spawn into the world by finding this node through the group,
+	# not get_tree().current_scene — the whole game now lives inside a SubViewport
+	# (§6), so current_scene is the outer container, not the world.
+	add_to_group("world")
+	# Debug readout ink from the palette (§3), not a scene hex literal.
+	debug_label.add_theme_color_override("font_color", EnvPalette.color("rock_high"))
+	# CanvasModulate multiplies the whole world down toward darkness (§5.1); the
+	# additive PointLight2Ds then bring lit surfaces back toward their true palette
+	# value. cave_ambient is tuned to leave the room dimly readable unlit rather than
+	# pure black (playability), with the lights providing the real visibility. The UI
+	# CanvasLayers render on their own canvas, so they stay full-bright.
+	var dark := CanvasModulate.new()
+	dark.name = "WorldModulate"
+	dark.color = EnvPalette.color("cave_ambient")
+	add_child(dark)
 	add_child(InstrumentOverlay.new())
 	var s := RoomGraph.start()
 	enter_room(str(s.get("room", "")), str(s.get("entry", "")))

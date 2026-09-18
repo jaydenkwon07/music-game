@@ -8,10 +8,11 @@ extends Control
 ## affects gameplay, so like the synth and the ring it does not gate on
 ## effects_enabled(); it just shows what notes exist and which one was struck.
 
-## Slot geometry in internal (320x180) pixels. Tune by feel.
-@export var slot_size: Vector2 = Vector2(28.0, 24.0)
-@export var slot_gap: float = 4.0
-@export var margin_bottom: float = 6.0
+## Slot geometry in internal (640x360) pixels. Doubled from M3 in the §4
+## resolution migration so the bar keeps the same screen fraction. Tune by feel.
+@export var slot_size: Vector2 = Vector2(56.0, 48.0)
+@export var slot_gap: float = 8.0
+@export var margin_bottom: float = 12.0
 ## Seconds a slot stays lit after its note is played.
 @export var flash_time: float = 0.18
 
@@ -20,7 +21,8 @@ var _font: Font
 
 
 func _ready() -> void:
-	_font = ThemeDB.fallback_font
+	# The project's bitmap font (M4 §7), not the antialiasing engine fallback.
+	_font = get_theme_default_font()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_sync_slots()
@@ -78,13 +80,13 @@ func _draw_slot(rect: Rect2, slot: int) -> void:
 	# Colour first: the swatch is the primary channel. Flash brightens it toward
 	# white on press, fading back over flash_time.
 	var flash_t := (_flash[slot] / flash_time) if flash_time > 0.0 else 0.0
-	draw_rect(rect, base.lerp(Color.WHITE, flash_t * 0.8), true)
-	draw_rect(rect, Color(0.0, 0.0, 0.0, 0.5), false, 1.0)
+	draw_rect(rect, base.lerp(EnvPalette.color("bright"), flash_t * 0.8), true)
+	draw_rect(rect, EnvPalette.with_alpha("ink", 0.5), false, 1.0)
 
 	# Note name second: small, centred near the swatch's lower edge.
 	if midi >= 0 and _font != null:
-		var baseline := Vector2(rect.position.x, rect.end.y - 4.0)
+		var baseline := Vector2(rect.position.x, rect.end.y - 8.0)
 		draw_string(
 			_font, baseline, NoteNames.to_name(midi),
-			HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 8, Color(0.0, 0.0, 0.0, 0.85)
+			HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 16, EnvPalette.with_alpha("ink", 0.85)
 		)

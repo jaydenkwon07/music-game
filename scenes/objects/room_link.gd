@@ -19,8 +19,9 @@ signal transition_requested(to_room: String, to_entry: String)
 
 @export var to_room: String = ""
 @export var to_entry: String = ""
-## Trigger extent in pixels. About a tile, so the 10px player reliably crosses it.
-@export var size: Vector2 = Vector2(16.0, 16.0)
+## Trigger extent in pixels. Room overrides this to span the (doubled) opening;
+## the default is a sane fallback sized for the 20px player (§4 migration).
+@export var size: Vector2 = Vector2(32.0, 32.0)
 ## Seconds before a freshly-instanced link will fire, so an arrival gap does not
 ## bounce the player straight back.
 @export var arm_delay: float = 0.3

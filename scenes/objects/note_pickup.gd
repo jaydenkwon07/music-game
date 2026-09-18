@@ -14,7 +14,11 @@ extends Interactable
 @export var note_id: String = ""
 ## Drawn radius. The interact range is Interactable.radius, set a little larger so
 ## the note is collectable from contact, not pixel-perfect overlap.
-@export var draw_radius: float = 6.0
+@export var draw_radius: float = 12.0
+## The pickup IS a light (§5.2): a bright pool in its own note colour, so it
+## announces itself before the player can see the floor around it (§5.4).
+@export var light_radius: float = 60.0
+@export var light_energy: float = 0.8
 
 var _collected: bool = false
 
@@ -25,6 +29,15 @@ func _ready() -> void:
 	# not reappear on the return trip. WorldState remembers this, keyed by note id.
 	if WorldState.is_pickup_taken(note_id):
 		queue_free()
+		return
+	add_child(Lighting.make_light(light_radius, light_energy, _note_color(), false))
+
+
+func _note_color() -> Color:
+	var note := NoteRegistry.by_id(note_id)
+	if note.is_empty():
+		return NoteColors.NEUTRAL
+	return NoteColors.color(note["category"], note["index"], NoteInventory.OVERWORLD_OCTAVE)
 
 
 ## Only offer to be collected while it still holds an uncollected note.
@@ -42,9 +55,5 @@ func interact(_player: Node2D) -> void:
 
 
 func _draw() -> void:
-	var note := NoteRegistry.by_id(note_id)
-	var col := NoteColors.NEUTRAL
-	if not note.is_empty():
-		col = NoteColors.color(note["category"], note["index"], NoteInventory.OVERWORLD_OCTAVE)
-	draw_circle(Vector2.ZERO, draw_radius, col)
-	draw_arc(Vector2.ZERO, draw_radius, 0.0, TAU, 24, Color(0.0, 0.0, 0.0, 0.5), 1.0)
+	draw_circle(Vector2.ZERO, draw_radius, _note_color())
+	draw_arc(Vector2.ZERO, draw_radius, 0.0, TAU, 24, EnvPalette.with_alpha("ink", 0.5), 1.0)

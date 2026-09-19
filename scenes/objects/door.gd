@@ -1,44 +1,41 @@
 class_name Door
 extends Interactable
 ## A melody-locked door (§5.10, §6.6). Configured with only a melody id (§3); it
-## composes a MelodyLock and shows the melody's STRUCTURE as gems — how many notes,
-## their categories, and progress so far — at top-down scale. It never shows which
-## notes: as of M3 the gems tint by category only (D-M3-3), and the specific melody
-## is learned from a MelodyChime in the world (§6.5). It gates a real room exit —
-## opening disables its blocking body so the RoomLink behind it is reachable (§3.7).
+## composes a MelodyLock and a DoorGems row that shows the melody's STRUCTURE — how
+## many notes, their categories, and progress so far — at top-down scale. It never
+## shows which notes: the gems tint by category only (D-M3-3), and the specific
+## melody is learned from a MelodyChime in the world (§6.5). It gates a real room
+## exit — opening disables its blocking body so the RoomLink behind it is reachable.
 ##
 ## Interacting (space, via the Interactor) enters the instrument state and arms the
 ## lock. Play the melody: gems light one at a time; a wrong note resets them with a
-## soft cue and no penalty (§6); the full melody opens the door for good.
+## soft cue and no penalty (§6); the full melody triggers the unlock choreography
+## (§9) and opens the door for good.
 
 @export var melody_id: String = ""
 ## Sizes doubled from M3 in the §4 resolution migration (world units doubled).
 @export var slab_size: Vector2 = Vector2(48.0, 60.0)
-## Gem radius and how far above the slab the gem row sits, in pixels.
-@export var gem_radius: float = 5.0
-@export var gem_margin: float = 10.0
-## Seconds the soft mismatch cue lasts.
-@export var mismatch_time: float = 0.35
-## Each gem carries a small light in its category colour (§5.2), dim until that
-## gem is confirmed, so the door announces itself in the dark (§5.4).
-@export var gem_light_radius: float = 25.0
-@export var gem_light_energy: float = 0.4
-@export var gem_light_lit_energy: float = 0.9
+## Unlock choreography, the loop's payoff (§9). All tunable by feel (§10): a held
+## beat, gems flaring one at a time as each note re-sounds (an arpeggio resolving),
+## a camera shake, and a dust burst.
+@export var unlock_hold: float = 0.15         ## beat held before and after the flare
+@export var unlock_note_gap: float = 0.12     ## seconds per flared gem / replayed note
+@export var unlock_shake_strength: float = 4.0
+@export var unlock_shake_time: float = 0.35
+@export var unlock_dust_count: int = 16
 
 ## Gems show a note's CATEGORY, not the note itself (D-M3-3): every gem in a
-## category uses this one representative index within the category's hue arc, so
-## the door reveals which categories are involved (structure) but never which
-## specific note (content — that now lives on the chime, §6.5).
+## category uses this one representative index within the category's hue arc. Lives
+## here (not on DoorGems) because the keyboard's melody strip references it too, so
+## the door, its gems and the strip all speak one colour language.
 const CATEGORY_REP_INDEX := 1
 
 var _lock: MelodyLock
+var _gems: DoorGems
 var _targets: Array = []
-var _progress: int = 0
 var _total: int = 0
 var _open: bool = false
-var _mismatch_flash: float = 0.0  # remaining mismatch-cue time, seconds
 var _blocker: CollisionShape2D
-var _gem_lights: Array[PointLight2D] = []
 
 
 func _ready() -> void:
@@ -57,7 +54,9 @@ func _ready() -> void:
 	_targets = _lock.target_midi()
 
 	_add_blocker()
-	_build_gem_lights()
+	_gems = DoorGems.new()
+	add_child(_gems)
+	_gems.configure(_targets, slab_size)
 	NoteBus.instrument_state_changed.connect(_on_instrument_state_changed)
 
 	# Rooms are re-instanced on every transition (§6.3a); a door the player already
@@ -88,35 +87,64 @@ func _on_instrument_state_changed(active: bool) -> void:
 	if active:
 		return
 	_lock.disarm()
-	_progress = 0
-	_update_gem_lights()
-	queue_redraw()
+	_gems.set_progress(0, _total)
 
 
 func _on_progress(progress: int, total: int) -> void:
-	_progress = progress
 	_total = total
-	_update_gem_lights()
-	queue_redraw()
+	_gems.set_progress(progress, total)
 
 
 func _on_mismatch() -> void:
-	_mismatch_flash = mismatch_time
-	_update_gem_lights()
-	set_process(true)
-	queue_redraw()
+	_gems.mismatch()
 
 
+## The melody matched — play the payoff (§9), then open. Runs while still in the
+## instrument state, so movement stays suspended through the moment. Async: each
+## await yields, the last step finalises the open.
 func _on_unlocked() -> void:
-	_open = true
-	# Stop blocking so the room behind the door becomes reachable.
+	if _open:
+		return
+	_open = true                 # can_interact() is false from here on
+	# Disarm before replaying the melody so the arpeggio's own notes can't re-enter
+	# matching (the lock also disarms itself on MATCH; this is belt-and-braces).
+	_lock.disarm()
+
+	await get_tree().create_timer(unlock_hold).timeout
+	NoteBus.request_shake(unlock_shake_strength, unlock_shake_time)
+	_spawn_dust()
+
+	# Flare the gems one at a time, re-sounding each note as it lights — the melody
+	# resolves as the door gives way.
+	_gems.flare(0)
+	for i in _total:
+		_gems.flare(i + 1)
+		if i < _targets.size():
+			NoteBus.play_note(int(_targets[i]), global_position)
+		await get_tree().create_timer(unlock_note_gap).timeout
+
+	await get_tree().create_timer(unlock_hold).timeout
+	_finalize_open()
+
+
+## Commit the open: stop blocking, remember it across transitions, darken the gems,
+## and leave the instrument state.
+func _finalize_open() -> void:
 	if _blocker != null:
 		_blocker.set_deferred("disabled", true)
-	# Remember it across transitions, so the return trip finds it open (§6.3a).
 	WorldState.mark_door_open(melody_id)
-	_update_gem_lights()
+	_gems.set_open(true)
 	NoteBus.set_instrument_state(false)
 	queue_redraw()
+
+
+## A puff of stone dust at the gem row as the door gives way (§9). Parented to the
+## door (which is not freed), coloured stone so it reads as rock, not a note.
+func _spawn_dust() -> void:
+	var dust := ParticleBurst.burst(EnvPalette.color("rock_high"))
+	dust.count = unlock_dust_count
+	add_child(dust)
+	dust.position = Vector2(0.0, -slab_size.y * 0.5)
 
 
 ## Start open with no instrument-state round trip — used when WorldState says this
@@ -125,18 +153,8 @@ func _open_immediately() -> void:
 	_open = true
 	if _blocker != null:
 		_blocker.set_deferred("disabled", true)
-	_update_gem_lights()
+	_gems.set_open(true)
 	queue_redraw()
-
-
-func _process(delta: float) -> void:
-	if _mismatch_flash > 0.0:
-		_mismatch_flash = maxf(_mismatch_flash - delta, 0.0)
-		if _mismatch_flash == 0.0:
-			_update_gem_lights()  # flash over — gems return to their lit/dim state
-		queue_redraw()
-	else:
-		set_process(false)
 
 
 func _add_blocker() -> void:
@@ -149,46 +167,7 @@ func _add_blocker() -> void:
 	add_child(body)
 
 
-## One light per gem, positioned to match the drawn gem row and coloured by that
-## gem's category (§5.2). Built once; energy is what changes as the lock advances.
-func _build_gem_lights() -> void:
-	for i in _total:
-		var col := _gem_category_color(int(_targets[i]) if i < _targets.size() else -1)
-		var light := Lighting.make_light(gem_light_radius, gem_light_energy, col, false)
-		light.position = _gem_position(i)
-		add_child(light)
-		_gem_lights.append(light)
-	_update_gem_lights()
-
-
-## Gem i's local position, shared by the drawn gem and its light so they align.
-func _gem_position(i: int) -> Vector2:
-	var spacing := gem_radius * 2.0 + 4.0
-	var start_x := -_total * spacing * 0.5 + spacing * 0.5
-	return Vector2(start_x + i * spacing, -slab_size.y * 0.5 - gem_margin)
-
-
-## Brighten confirmed gems, dim the rest, dip the whole row on a mismatch, and go
-## dark once the door is open (the gems stop drawing then too).
-func _update_gem_lights() -> void:
-	var flashing := _mismatch_flash > 0.0
-	for i in _gem_lights.size():
-		var energy := gem_light_energy
-		if _open:
-			energy = 0.0
-		elif flashing:
-			energy = gem_light_energy * 0.4
-		elif i < _progress:
-			energy = gem_light_lit_energy
-		_gem_lights[i].energy = energy
-
-
 func _draw() -> void:
-	_draw_slab()
-	_draw_gems()
-
-
-func _draw_slab() -> void:
 	var rect := Rect2(-slab_size * 0.5, slab_size)
 	if _open:
 		# Hollow frame: the slab has swung away, leaving void the light can't reach.
@@ -196,40 +175,3 @@ func _draw_slab() -> void:
 	else:
 		draw_rect(rect, EnvPalette.color("rock_deep"), true)
 		draw_rect(rect, EnvPalette.with_alpha("ink", 0.5), false, 1.0)
-
-
-func _draw_gems() -> void:
-	if _total <= 0 or _open:
-		return
-	# One gem per melody note, centred in a row just above the slab.
-	var spacing := gem_radius * 2.0 + 4.0
-	var row_w := _total * spacing
-	var start_x := -row_w * 0.5 + spacing * 0.5
-	var y := -slab_size.y * 0.5 - gem_margin
-	var flashing := _mismatch_flash > 0.0
-	for i in _total:
-		var base := _gem_category_color(int(_targets[i]) if i < _targets.size() else -1)
-		var col: Color
-		if flashing:
-			# Soft "no": the whole row falls to a dull desaturated stone grey briefly.
-			col = base.darkened(0.6).lerp(EnvPalette.color("rock_high"), 0.7)
-		elif i < _progress:
-			col = base                      # lit: confirmed
-		else:
-			col = base.darkened(0.6)        # dim, but the target colour still reads
-		var pos := Vector2(start_x + i * spacing, y)
-		draw_circle(pos, gem_radius, col)
-		draw_arc(pos, gem_radius, 0.0, TAU, 16, EnvPalette.with_alpha("ink", 0.5), 1.0)
-
-
-## The representative colour of a target note's CATEGORY (D-M3-3): resolve the
-## note's category via NoteRegistry, then colour it at the category's fixed
-## representative index — so the gem shows the family (warm / green / cool) and
-## progress, never which of the four notes in that family it is. An unassigned
-## pitch class falls back to NEUTRAL.
-func _gem_category_color(midi: int) -> Color:
-	var note := NoteRegistry.by_midi(midi)
-	if note.is_empty():
-		return NoteColors.NEUTRAL
-	var octave := int(floor(float(midi) / 12.0)) - 1
-	return NoteColors.color(note["category"], CATEGORY_REP_INDEX, octave)

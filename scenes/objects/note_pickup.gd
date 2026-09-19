@@ -61,13 +61,23 @@ func can_interact() -> bool:
 	return not _collected
 
 
-func interact(_player: Node2D) -> void:
+func interact(player: Node2D) -> void:
 	# collect() rejects an unknown or already-owned id; only vanish on success so
 	# a duplicate pickup stays put rather than silently disappearing.
 	if NoteInventory.collect(note_id):
 		_collected = true
 		WorldState.mark_pickup_taken(note_id)
+		_spawn_collect_flash(player)
 		queue_free()
+
+
+## The note's light lifts off and folds into the player (§9). Parented to the World
+## host, not to us — we're about to free — mirroring how NoteVisuals spawns rings.
+func _spawn_collect_flash(player: Node2D) -> void:
+	var host := get_tree().get_first_node_in_group("world")
+	if host == null or player == null:
+		return
+	host.add_child(CollectFlash.spawn(_note_color(), global_position, player))
 
 
 func _draw() -> void:

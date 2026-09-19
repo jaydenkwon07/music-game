@@ -38,7 +38,11 @@ extends Control
 @export var marker_radius: float = 5.0
 @export var marker_gap: float = 4.0
 @export var strip_margin: float = 18.0
+## Seconds the whole widget fades in/out with the scrim (§9), so the panel eases in
+## rather than popping. Matches InstrumentOverlay.fade_time by default.
+@export var panel_fade_time: float = 0.18
 
+var _fade_tween: Tween
 var _font: Font
 var _slots: Array = []            # cached InstrumentKeyboardLayout.slots(), local origin
 var _flash: Array[float] = []     # remaining flash seconds, indexed by semitone 0..11
@@ -60,6 +64,7 @@ func _ready() -> void:
 	_octave_shift = InputConfig.octave_shift()
 	# Only visible in the instrument state — the piano bindings are live only then.
 	visible = NoteBus.instrument_state_active
+	modulate.a = 1.0 if visible else 0.0
 	NoteBus.instrument_state_changed.connect(_on_instrument_state_changed)
 	# Fills in a slot as the player collects (§ addendum Step 1).
 	NoteInventory.note_collected.connect(_on_note_collected)
@@ -73,10 +78,11 @@ func _ready() -> void:
 
 
 func _on_instrument_state_changed(active: bool) -> void:
-	visible = active
 	if active:
 		# reset_octave() already fired on entry; sync in case we missed the signal.
 		_octave_shift = InputConfig.octave_shift()
+		visible = true
+		_fade_to(1.0)
 	else:
 		# No stale flash or strip lingers into the next visit — the next door
 		# re-arms and re-sends its own structure.
@@ -84,7 +90,24 @@ func _on_instrument_state_changed(active: bool) -> void:
 		_melody_targets = []
 		_melody_progress = 0
 		set_process(false)
+		# Ease out with the scrim, then hide once invisible.
+		_fade_to(0.0)
 	queue_redraw()
+
+
+## Fade the whole widget toward `target` alpha over panel_fade_time (§9); hide it
+## when it reaches zero so it stops drawing. Replaces any in-flight fade.
+func _fade_to(target: float) -> void:
+	if _fade_tween != null and _fade_tween.is_valid():
+		_fade_tween.kill()
+	if panel_fade_time <= 0.0:
+		modulate.a = target
+		visible = target > 0.0
+		return
+	_fade_tween = create_tween()
+	_fade_tween.tween_property(self, "modulate:a", target, panel_fade_time)
+	if target <= 0.0:
+		_fade_tween.tween_callback(func() -> void: visible = false)
 
 
 func _on_note_collected(_note_id: String) -> void:

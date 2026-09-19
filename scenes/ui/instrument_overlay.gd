@@ -19,8 +19,9 @@ extends CanvasLayer
 @export var scrim_color: Color = Color(0.05, 0.06, 0.12)
 ## Opacity when fully faded in. Low enough that the world stays visible behind it.
 @export var max_alpha: float = 0.32
-## Seconds for a full fade. Fast, so cancel feels instant (§5.8).
-@export var fade_time: float = 0.12
+## Seconds for a full fade — an ease-in on entry, not a cut (§9), still fast enough
+## that cancel feels instant (§5.8). The keyboard panel eases on the same clock.
+@export var fade_time: float = 0.18
 
 var _scrim: ColorRect
 var _alpha: float = 0.0

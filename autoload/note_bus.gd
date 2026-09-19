@@ -28,11 +28,21 @@ signal melody_armed(targets: Array)
 ## reset to 0 by a wrong one. Mirrors MelodyLock.progress_changed onto the bus.
 signal melody_progress(progress: int, total: int)
 
+## A camera shake was requested (M4 Step 6). One emitter — the door unlock, the
+## loop's payoff — one listener: World, which owns the camera. Bus-routed so the
+## door needs no reference to the camera or the world. `strength` is peak offset in
+## pixels; the listener snaps it to whole pixels so 640×360 never shimmers.
+signal shake_requested(strength: float, duration: float)
+
 var instrument_state_active: bool = false
 
 
 func play_note(midi: int, source: Vector2 = Vector2.ZERO) -> void:
 	note_played.emit(midi, source)
+
+
+func request_shake(strength: float, duration: float) -> void:
+	shake_requested.emit(strength, duration)
 
 
 func set_instrument_state(active: bool) -> void:

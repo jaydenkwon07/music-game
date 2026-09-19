@@ -34,6 +34,9 @@ func setup(color: Color) -> void:
 	# several can overlap, so it stays cheap.
 	_light = Lighting.make_light(0.1, light_energy, color, false)
 	add_child(_light)
+	# A few sparks in the same colour give the note a bit of grit beyond the ring
+	# (§9). Self-freeing, and shorter-lived than the ring, so it never outlives us.
+	add_child(ParticleBurst.burst(color))
 
 
 func _process(delta: float) -> void:

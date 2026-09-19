@@ -4,7 +4,7 @@ extends CharacterBody2D
 ## Pixels per second. At 640x360 the screen is 32 tiles wide; 160 crosses it in
 ## about four seconds. Doubled from M3's 80 in the §4 resolution migration so the
 ## world (now 2× larger in world units) still plays at the same on-screen pace.
-## The single most important number to tune by feel — Step 6 revisits it.
+## The single most important number to tune by feel.
 @export var max_speed: float = 160.0
 
 ## Seconds to reach full speed from rest, and to stop from full speed.
@@ -21,6 +21,12 @@ extends CharacterBody2D
 @export var light_max_radius: float = 120.0
 @export var light_energy: float = 0.8
 const LIGHT_FULL_COLLECTION := 12
+
+## Camera follow-lag (§9): the Camera2D's position_smoothing_speed — higher trails
+## tighter, 0 disables it (the camera locks to the player). The viewport pixel-snaps
+## (main.tscn), so the trail doesn't shimmer; World.reset_smoothing() on room-enter
+## keeps a teleport from smearing across the map. Tune by feel.
+@export var camera_follow_speed: float = 8.0
 
 var facing: Vector2 = Vector2.DOWN
 var _light: PointLight2D
@@ -44,6 +50,12 @@ func _ready() -> void:
 	add_child(_light)
 	NoteInventory.note_collected.connect(_on_note_collected)
 	_refresh_light()
+	# Camera follow-lag (§9): a small trail behind the player. World clamps it to the
+	# room bounds and resets smoothing on transition.
+	var camera := get_node_or_null("Camera2D") as Camera2D
+	if camera != null:
+		camera.position_smoothing_enabled = camera_follow_speed > 0.0
+		camera.position_smoothing_speed = camera_follow_speed
 
 
 func _on_note_collected(_note_id: String) -> void:

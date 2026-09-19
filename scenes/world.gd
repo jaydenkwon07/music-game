@@ -14,6 +14,12 @@ extends Node2D
 
 var _current_room: Room = null
 
+# Camera shake (§9), driven by NoteBus.shake_requested: peak offset in pixels and
+# the remaining/total time, so the shake decays linearly to nothing.
+var _shake_strength: float = 0.0
+var _shake_time: float = 0.0
+var _shake_duration: float = 0.0
+
 
 func _ready() -> void:
 	# FX (note rings) spawn into the world by finding this node through the group,
@@ -31,6 +37,7 @@ func _ready() -> void:
 	dark.name = "WorldModulate"
 	dark.color = EnvPalette.color("cave_ambient")
 	add_child(dark)
+	NoteBus.shake_requested.connect(_on_shake_requested)
 	add_child(InstrumentOverlay.new())
 	var s := RoomGraph.start()
 	enter_room(str(s.get("room", "")), str(s.get("entry", "")))
@@ -87,7 +94,31 @@ func _apply_camera_limits(room_bounds: Rect2) -> void:
 	camera.reset_smoothing()
 
 
-func _process(_delta: float) -> void:
+## Kick off a camera shake (§9). The door unlock is the only caller so far.
+func _on_shake_requested(strength: float, duration: float) -> void:
+	_shake_strength = strength
+	_shake_time = duration
+	_shake_duration = duration
+
+
+## Offset the camera by a decaying, whole-pixel jitter. Whole pixels keep it on the
+## 640×360 grid so it shakes rather than shimmers (§9); it settles back to zero.
+func _update_shake(delta: float) -> void:
+	var camera := player.get_node_or_null("Camera2D") as Camera2D
+	if camera == null:
+		return
+	if _shake_time <= 0.0:
+		if camera.offset != Vector2.ZERO:
+			camera.offset = Vector2.ZERO
+		return
+	_shake_time = maxf(_shake_time - delta, 0.0)
+	var decay := (_shake_time / _shake_duration) if _shake_duration > 0.0 else 0.0
+	var s := int(round(_shake_strength * decay))
+	camera.offset = Vector2(randi_range(-s, s), randi_range(-s, s))
+
+
+func _process(delta: float) -> void:
+	_update_shake(delta)
 	debug_label.text = "%d x %d   layout: %s   room: %s" % [
 		get_viewport_rect().size.x,
 		get_viewport_rect().size.y,

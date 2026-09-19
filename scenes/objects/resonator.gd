@@ -10,15 +10,15 @@ extends Node2D
 ## Which palette slot this block answers to. Rewrite the palette JSON and it
 ## retunes with no code change.
 @export var slot: int = 0
-## Sizes/ranges doubled from M3 in the §4 resolution migration (world units ×2).
-@export var block_size: Vector2 = Vector2(40.0, 40.0)
+## Sizes/ranges scaled with the world across migrations (×1.5 at the 640→960 step).
+@export var block_size: Vector2 = Vector2(60.0, 60.0)
 ## How close the play position must be for the block to hear the note, in pixels.
-@export var hear_radius: float = 80.0
+@export var hear_radius: float = 120.0
 
 ## Seconds the correct-note light and the wrong-note shake each last.
 @export var light_time: float = 0.45
 @export var shake_time: float = 0.2
-@export var shake_pixels: float = 4.0
+@export var shake_pixels: float = 6.0
 
 var _light: float = 0.0  # remaining light time, seconds
 var _shake: float = 0.0  # remaining shake time, seconds

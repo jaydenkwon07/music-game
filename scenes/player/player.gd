@@ -1,11 +1,11 @@
 extends CharacterBody2D
 ## 8-directional movement. No abilities, no notes — M0 is movement only.
 
-## Pixels per second. At 640x360 the screen is 32 tiles wide; 160 crosses it in
-## about four seconds. Doubled from M3's 80 in the §4 resolution migration so the
-## world (now 2× larger in world units) still plays at the same on-screen pace.
-## The single most important number to tune by feel.
-@export var max_speed: float = 160.0
+## Pixels per second. At 960x540 the screen is 32 tiles of 30px; 240 crosses it in
+## about four seconds. Scaled ×1.5 from 160 at the 640→960 resolution step (tiles
+## 20→30px), so the world plays at the same on-screen pace. The single most
+## important number to tune by feel.
+@export var max_speed: float = 240.0
 
 ## Seconds to reach full speed from rest, and to stop from full speed.
 ## Zero gives instant, Undertale-ish response. A little smoothing usually
@@ -17,8 +17,8 @@ extends CharacterBody2D
 ## mechanical — they see more of the world as they accumulate, and the cold open
 ## is genuinely dark because they genuinely have nothing. Radius ramps from
 ## LIGHT_MIN (zero notes) to LIGHT_MAX (a full twelve), by owned pitch classes.
-@export var light_min_radius: float = 50.0
-@export var light_max_radius: float = 120.0
+@export var light_min_radius: float = 75.0
+@export var light_max_radius: float = 180.0
 @export var light_energy: float = 0.8
 const LIGHT_FULL_COLLECTION := 12
 

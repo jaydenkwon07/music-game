@@ -19,9 +19,9 @@ class _Particle:
 
 @export var count: int = 8
 @export var lifetime: float = 0.45
-@export var speed: float = 70.0     ## initial px/sec, before drag
+@export var speed: float = 105.0    ## initial px/sec, before drag (×1.5 at 640→960)
 @export var drag: float = 4.0       ## per-second velocity decay; gives the ease-out
-@export var particle_size: float = 2.0
+@export var particle_size: float = 3.0
 
 var _color: Color = Color.WHITE
 var _particles: Array = []

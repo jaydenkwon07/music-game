@@ -17,17 +17,17 @@ extends Interactable
 ## two never read as the same object in the dark or colourblind (§6, D-M4-7). The
 ## interact range is Interactable.radius, set a little larger so the note is
 ## collectable from contact, not pixel-perfect overlap.
-@export var draw_radius: float = 12.0
+@export var draw_radius: float = 18.0
 ## The pickup IS a light (§5.2): a bright pool in its own note colour, so it
 ## announces itself before the player can see the floor around it (§5.4).
-@export var light_radius: float = 60.0
+@export var light_radius: float = 90.0
 @export var light_energy: float = 0.8
 ## Floating motion, tuned by feel (§10). The spin and bob live entirely in _draw —
 ## the node transform, and so the collision shape and interact_point, never move —
 ## so "clearly takeable" costs nothing in interaction geometry.
 @export var spin_speed: float = 1.2   ## radians/sec
 @export var bob_speed: float = 2.4    ## radians/sec
-@export var bob_amplitude: float = 2.0  ## pixels
+@export var bob_amplitude: float = 3.0  ## pixels
 
 var _collected: bool = false
 var _t: float = 0.0

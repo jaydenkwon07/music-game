@@ -12,9 +12,9 @@ extends Node2D
 ## Category colour uses Door.CATEGORY_REP_INDEX, the same index the keyboard's
 ## melody strip uses, so door and strip speak one colour language.
 
-@export var gem_radius: float = 5.0
-@export var gem_margin: float = 10.0        ## how far above the slab the row sits
-@export var gem_light_radius: float = 25.0
+@export var gem_radius: float = 8.0
+@export var gem_margin: float = 15.0        ## how far above the slab the row sits
+@export var gem_light_radius: float = 38.0
 @export var gem_light_energy: float = 0.4
 @export var gem_light_lit_energy: float = 0.9
 ## Seconds the soft mismatch cue (a dip of the whole row) lasts.
@@ -111,7 +111,7 @@ func _update_gem_lights() -> void:
 # --- Geometry & drawing ---
 
 func _spacing() -> float:
-	return gem_radius * 2.0 + 4.0
+	return gem_radius * 2.0 + 6.0
 
 
 ## Gem i's local position, shared by the drawn gem and its light so they align.

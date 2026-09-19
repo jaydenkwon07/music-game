@@ -16,19 +16,19 @@ extends Interactable
 ## and deliberately NOT round, so a chime can never be mistaken for a takeable
 ## pickup (a floating diamond) in the dark or colourblind. Vertical is the whole
 ## point — that read is what a bare circle destroyed during M3 testing.
-@export var bar_width: float = 6.0
-@export var bar_height: float = 26.0
-@export var mount_width: float = 14.0
-@export var mount_height: float = 4.0
+@export var bar_width: float = 9.0
+@export var bar_height: float = 39.0
+@export var mount_width: float = 21.0
+@export var mount_height: float = 6.0
 ## How far the sounding "sound wave" ring clears the bar when the chime is struck.
-@export var pulse_ring_radius: float = 20.0
+@export var pulse_ring_radius: float = 30.0
 ## Seconds per beat; a note's on-screen/audible dwell is this times its rhythm.
 @export var beat: float = 0.32
 ## Seconds a single note's colour pulse lasts.
 @export var pulse_time: float = 0.3
 ## The chime carries its own light (§5.2, §5.4): a dim cool glow at rest so it
 ## announces itself before terrain, pulsing up in each note's colour as it plays.
-@export var light_radius: float = 30.0
+@export var light_radius: float = 45.0
 @export var light_base_energy: float = 0.25
 @export var light_pulse_energy: float = 0.6
 

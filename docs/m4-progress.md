@@ -1,12 +1,13 @@
 # M4 — Art direction and the first finished room · Progress
 
-**Status:** in progress. Steps 0–2 built; Step 3 has a procedural placeholder
-tileset; Step 4's silhouette fix (pickup + chime) is in; Steps 5–7 not started.
-**Date:** 2026-09-18.
+**Status:** in progress. The code steps are built (0–2, plus Step 4 silhouettes
+and Step 6 motion); the drawn-art steps (3 real tileset, 5 Room A) and Step 7
+record are not. **Date:** 2026-09-18.
 **Spec:** `docs/m4-spec.md`. **Gates:** both owner sign-offs approved
 (2026-09-18) — the §4 resolution decision (Q27) and the §3 art direction — so
-this work builds on 640×360 / 32×18 and the lithic-base / resonant-doors
-direction.
+this work builds on **960×540 / 32×18** and the lithic-base / resonant-doors
+direction. (Resolution was first set to 640×360, then bumped to 960×540 the same
+day — see Step 0.)
 
 This records the slice that was built ahead of this commit. It is **not** the
 M4 completion record — the §1 gate (a store-page still of Room A) is unmet, and
@@ -16,20 +17,23 @@ M4 completion record — the §1 gate (a store-page still of Room A) is unmet, a
 
 ## What's in
 
-### Step 0 — Resolution migration → done
+### Step 0 — Resolution migration → done (in two steps)
 
-- Internal resolution **320×180 → 640×360**; tiles stay 20px, so rooms go
-  **16×9 → 32×18** (§4.2, D-M4-3).
-- New render root `scenes/main.tscn` + `scenes/main.gd`: the world renders into a
-  **fixed 640×360 `SubViewport`**, shown through a `Display` `TextureRect` that
+- **First: 320×180 → 640×360**; tiles stayed 20px, so rooms went **16×9 → 32×18**
+  (§4.2, D-M4-3). `scripts/migrate_rooms_2x.py` doubled every room geometry file;
+  on-screen pace preserved (`max_speed` 80→160, HUD ×2, `DOOR_INSET` 2→4).
+- **Then, same day: 640×360 → 960×540** for finer detail while staying integer-clean
+  (×2→1080p, ×4→4K). This time the **32×18 grid was kept and the tile size changed
+  20→30px** (960/32 = 540/18 = 30), so a room still exactly fills the viewport (no
+  void) with **no geometry re-migration** — the grid data is resolution-independent
+  (tile coordinates), and the validator still passes unchanged. Every absolute
+  world/screen dimension scaled ×1.5 to hold proportions (player 20→30px, speed
+  160→240, light/ring/object/HUD sizes, and the Step 6 fx values); the grid *counts*
+  did not move.
+- Render root `scenes/main.tscn` + `scenes/main.gd`: the world renders into a
+  **fixed 960×540 `SubViewport`**, shown through a `Display` `TextureRect` that
   upscales to fill any window, letterboxed, nearest-filtered. `project.godot`
-  main scene switched `world.tscn → main.tscn`; window is 1280×720, stretch
-  disabled (the SubViewport owns the scaling, not the project stretch settings).
-- `scripts/migrate_rooms_2x.py` doubled every room geometry file; all four rooms
-  are now 32×18. The **room validator passes** on the migrated rooms
-  (`4 rooms reachable, 2 doors solvable, ramp holds`).
-- On-screen pace preserved: `max_speed` doubled 80 → 160, HUD slot geometry
-  doubled, `DOOR_INSET` 2 → 4.
+  window is now 1920×1080 (×2), stretch disabled (the SubViewport owns scaling).
 
 ### Step 1 — Palette and font → done
 
@@ -93,17 +97,38 @@ read survives the dark overlay and the colourblind case (§6, §8 silhouette tes
 
 Player (a near-white square) and door gems (a geometric row set into the slab
 frame) already read as distinct types, so Step 4 is scoped to the pickup/chime
-pair — the actual defect. Owner-verified on `godot .`; the black-on-white
-silhouette test (§8) is the standing gate.
+pair — the actual defect. The black-on-white silhouette test (§8) is the standing
+gate.
+
+### Step 6 — motion / game feel → built (feel is owner-tuned)
+
+Mechanisms with `@export` knobs; the numbers themselves are the owner's to dial by
+feel on `godot .` (§10):
+
+- **Camera follow-lag** — `Camera2D.position_smoothing` enabled from `player.gd`
+  (`camera_follow_speed`, 0 disables); pixel-snapped so it doesn't shimmer, and
+  `World.reset_smoothing()` on room-enter keeps teleports from smearing.
+- **Note played** — a few sparks in the note colour via a reusable, self-freeing
+  `scenes/fx/particle_burst.gd`, alongside the existing ring/light flash.
+- **Pickup collected** — `scenes/fx/collect_flash.gd`: the note's light lifts off
+  the pickup and travels into the player, folding into the collection-grown light.
+- **Door unlock (the payoff)** — a choreography in `door.gd`: held beat → gems
+  flare in sequence → camera shake (new `NoteBus.shake_requested`, applied by
+  `World` as decaying whole-pixel offsets) → dust burst → the melody re-played as a
+  resolving arpeggio through the placeholder synth → open. The lock is disarmed
+  first so the arpeggio can't re-enter matching.
+- **Instrument entry** — the scrim fade nudged to ~0.18s and the keyboard panel
+  eases in with it (modulate tween) rather than popping.
+- **Refactor:** the door's gem visuals were extracted to `scenes/objects/door_gems.gd`
+  so the choreography didn't push `door.gd` further past the line guideline;
+  `Door.CATEGORY_REP_INDEX` stayed on `Door` (the keyboard strip references it).
 
 ---
 
 ## What's not in (remaining M4)
 
+- **Step 3 — real cave tileset** (drawn art; `rock_tileset.gd` is a placeholder).
 - **Step 5 — Room A to completion** (the §1 store-page-still gate). Not started.
-- **Step 6 — motion pass** (§9: movement feel tuned by feel, camera lag, the
-  door-unlock *event*, pickup-into-player light fold). Not started; the note-ring
-  easing predates M4.
 - **Step 7 — full record + reference still.** This doc is the interim record.
 - **Post-processing effects** — the pipeline is ready to host them; none attached.
 

@@ -8,14 +8,14 @@ extends Node2D
 ## any scene, so it lives in world space at the play position and stays put as
 ## the player moves on.
 
-## Final radius in internal (640x360) pixels, and how long the whole animation
-## lasts. Tune by feel. Radius/width doubled from M3 in the §4 migration.
-@export var max_radius: float = 44.0
+## Final radius in internal (960x540) pixels, and how long the whole animation
+## lasts. Tune by feel. Radius/width scaled ×1.5 at the 640→960 resolution step.
+@export var max_radius: float = 66.0
 @export var duration: float = 0.5
-@export var line_width: float = 4.0
+@export var line_width: float = 6.0
 ## The ring also carries a light that travels with it and dies with it (§5.2):
 ## radius grows 0 → light_max_radius, energy fades light_energy → 0.
-@export var light_max_radius: float = 90.0
+@export var light_max_radius: float = 135.0
 @export var light_energy: float = 1.0
 
 var _color: Color = Color.WHITE

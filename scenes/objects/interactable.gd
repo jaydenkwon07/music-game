@@ -16,9 +16,9 @@ extends Area2D
 ## prefer signals/groups over cross-system node references).
 const IN_RANGE_GROUP := "interactable_in_range"
 
-## How close the player must be for this to be interactable, in pixels. Doubled
-## from M3's 12 in the §4 resolution migration (world units doubled).
-@export var radius: float = 24.0
+## How close the player must be for this to be interactable, in pixels. Scaled with
+## the world across the resolution migrations (12 → 24 → 36 at the 640→960 step).
+@export var radius: float = 36.0
 
 
 func _ready() -> void:

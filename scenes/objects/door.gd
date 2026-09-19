@@ -13,14 +13,14 @@ extends Interactable
 ## (§9) and opens the door for good.
 
 @export var melody_id: String = ""
-## Sizes doubled from M3 in the §4 resolution migration (world units doubled).
-@export var slab_size: Vector2 = Vector2(48.0, 60.0)
+## Scaled with the world across migrations (now ×1.5 at the 640→960 step).
+@export var slab_size: Vector2 = Vector2(72.0, 90.0)
 ## Unlock choreography, the loop's payoff (§9). All tunable by feel (§10): a held
 ## beat, gems flaring one at a time as each note re-sounds (an arpeggio resolving),
 ## a camera shake, and a dust burst.
 @export var unlock_hold: float = 0.15         ## beat held before and after the flare
 @export var unlock_note_gap: float = 0.12     ## seconds per flared gem / replayed note
-@export var unlock_shake_strength: float = 4.0
+@export var unlock_shake_strength: float = 6.0
 @export var unlock_shake_time: float = 0.35
 @export var unlock_dust_count: int = 16
 

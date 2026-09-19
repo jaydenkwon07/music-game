@@ -19,25 +19,25 @@ extends Control
 ## letter from DisplayServer.keyboard_get_label_from_physical(), so it stays
 ## correct on AZERTY/Dvorak (§5).
 
-## White-key size in internal (640x360) pixels, and the gap between whites (all
-## doubled from M3 in the §4 resolution migration). Small by design: seven whites
-## at ~20px is ~140px across — it must not dominate a frame already crowded by the
-## note bar (§ addendum size budget). Tune by feel.
-@export var white_size: Vector2 = Vector2(20.0, 48.0)
-@export var white_gap: float = 2.0
-@export var black_height: float = 28.0
+## White-key size in internal (960x540) pixels, and the gap between whites (scaled
+## ×1.5 at the 640→960 resolution step). Small by design: seven whites at ~30px is
+## ~210px across — it must not dominate a frame already crowded by the note bar
+## (§ addendum size budget). Tune by feel.
+@export var white_size: Vector2 = Vector2(30.0, 72.0)
+@export var white_gap: float = 3.0
+@export var black_height: float = 42.0
 ## Distance from the bottom of the frame to the bottom of the white row. Clears
-## the note bar (~60px tall at the bottom) so the two don't overlap.
-@export var margin_bottom: float = 68.0
+## the note bar (~90px tall at the bottom) so the two don't overlap.
+@export var margin_bottom: float = 102.0
 ## Seconds a slot stays lit after its note is struck (Step 2). Matches the note
 ## bar so a played note flashes both in step.
 @export var flash_time: float = 0.18
 ## Melody-strip geometry (Step 3): marker radius, gap between markers, and how far
 ## the strip sits above the keyboard's top edge. Matches the door gems' size so
 ## the door and the strip read as the same language.
-@export var marker_radius: float = 5.0
-@export var marker_gap: float = 4.0
-@export var strip_margin: float = 18.0
+@export var marker_radius: float = 8.0
+@export var marker_gap: float = 6.0
+@export var strip_margin: float = 27.0
 ## Seconds the whole widget fades in/out with the scrim (§9), so the panel eases in
 ## rather than popping. Matches InstrumentOverlay.fade_time by default.
 @export var panel_fade_time: float = 0.18
@@ -212,9 +212,9 @@ func _draw_octave_indicator(origin: Vector2) -> void:
 	var octave := InputConfig.piano_base_octave() + _octave_shift
 	var shifted := _octave_shift != 0
 	var ink := EnvPalette.with_alpha("bright", 0.95) if shifted else EnvPalette.with_alpha("rock_high", 0.7)
-	var baseline := Vector2(origin.x, origin.y - 6.0)
+	var baseline := Vector2(origin.x, origin.y - 9.0)
 	draw_string(
-		_font, baseline, "oct %d" % octave, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink
+		_font, baseline, "oct %d" % octave, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, ink
 	)
 
 
@@ -263,9 +263,9 @@ func _draw_key_letter(rect: Rect2, semitone: int) -> void:
 	if label.is_empty():
 		return
 	var ink := EnvPalette.with_alpha("ink", 0.85) if _is_white(semitone) else EnvPalette.with_alpha("bright", 0.9)
-	var baseline := Vector2(rect.position.x, rect.end.y - 6.0)
+	var baseline := Vector2(rect.position.x, rect.end.y - 9.0)
 	draw_string(
-		_font, baseline, label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 16, ink
+		_font, baseline, label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 24, ink
 	)
 
 

@@ -31,13 +31,14 @@ const DOOR_INSET := 4
 ## end, not a tile early), and a transition entry lands ENTRY_INSET tiles inside
 ## the destination's matching edge — the mirror of the edge just left.
 const ENTRY_INSET := 1
-const EDGE_TRIGGER_THICKNESS := 16.0
+const EDGE_TRIGGER_THICKNESS := 24.0
 
-# Tile size for the placeholder TileSet. 20px makes a 32×18 room exactly 640×360,
+# Tile size for the placeholder TileSet. 30px makes a 32×18 room exactly 960×540,
 # so a one-screen room is a true fixed screen with no scroll (§5.2, §6.7, D-M3-5;
-# M4 §4 resolution migration). The Room reads the size back from the built TileSet
-# after this seed.
-var _tile_px: int = 20
+# M4 §4 migration, then bumped 20→30px at the 640→960 resolution step — the grid is
+# unchanged, only the tile size). The Room reads the size back from the built
+# TileSet after this seed.
+var _tile_px: int = 30
 var _size: Vector2i = Vector2i.ZERO
 var _entries: Dictionary = {}   # entry_id -> world-space Vector2 (tile centre)
 

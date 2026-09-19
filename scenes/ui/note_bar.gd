@@ -8,11 +8,11 @@ extends Control
 ## affects gameplay, so like the synth and the ring it does not gate on
 ## effects_enabled(); it just shows what notes exist and which one was struck.
 
-## Slot geometry in internal (640x360) pixels. Doubled from M3 in the §4
-## resolution migration so the bar keeps the same screen fraction. Tune by feel.
-@export var slot_size: Vector2 = Vector2(56.0, 48.0)
-@export var slot_gap: float = 8.0
-@export var margin_bottom: float = 12.0
+## Slot geometry in internal (960x540) pixels. Scaled ×1.5 at the 640→960
+## resolution step so the bar keeps the same screen fraction. Tune by feel.
+@export var slot_size: Vector2 = Vector2(84.0, 72.0)
+@export var slot_gap: float = 12.0
+@export var margin_bottom: float = 18.0
 ## Seconds a slot stays lit after its note is played.
 @export var flash_time: float = 0.18
 
@@ -85,8 +85,8 @@ func _draw_slot(rect: Rect2, slot: int) -> void:
 
 	# Note name second: small, centred near the swatch's lower edge.
 	if midi >= 0 and _font != null:
-		var baseline := Vector2(rect.position.x, rect.end.y - 8.0)
+		var baseline := Vector2(rect.position.x, rect.end.y - 12.0)
 		draw_string(
 			_font, baseline, NoteNames.to_name(midi),
-			HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 16, EnvPalette.with_alpha("ink", 0.85)
+			HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 24, EnvPalette.with_alpha("ink", 0.85)
 		)

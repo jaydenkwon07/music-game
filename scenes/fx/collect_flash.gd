@@ -9,8 +9,8 @@ extends Node2D
 ## Colour is the collected note's colour, passed in — never authored here (§3).
 
 @export var duration: float = 0.35
-@export var start_radius: float = 30.0
-@export var peak_radius: float = 55.0
+@export var start_radius: float = 45.0
+@export var peak_radius: float = 82.0
 @export var energy: float = 1.0
 
 var _t: float = 0.0

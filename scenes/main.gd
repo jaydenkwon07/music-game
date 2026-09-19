@@ -25,6 +25,10 @@ extends Control
 
 const BASE_SIZE := Vector2i(960, 540)
 
+## Post-process shader for the Display, run at output resolution after the upscale
+## (M5 Step 3b). Vignette only; bloom is deliberately off (spec §12).
+const VIGNETTE_SHADER := preload("res://scenes/fx/vignette.gdshader")
+
 @onready var _viewport: SubViewport = $GameViewport
 @onready var _prescale: SubViewport = $Prescale
 @onready var _prescale_rect: TextureRect = $Prescale/PrescaleRect
@@ -34,6 +38,9 @@ const BASE_SIZE := Vector2i(960, 540)
 func _ready() -> void:
 	_prescale_rect.texture = _viewport.get_texture()
 	_display.texture = _prescale.get_texture()
+	var post := ShaderMaterial.new()
+	post.shader = VIGNETTE_SHADER
+	_display.material = post
 	get_tree().root.size_changed.connect(_update_scale)
 	_update_scale()
 

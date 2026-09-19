@@ -6,16 +6,18 @@ extends RefCounted
 ## being stuck at 90°. `room.gd` no longer computes an adjacency mask by hand; it
 ## calls set_cells_terrain_connect and the terrain set does the rest.
 ##
-## The atlas here is still GENERATED (a placeholder), so Step 1's gate — paint a
-## blob and confirm the edges resolve — can be met before any art exists. Step 2
-## replaces `_build_atlas` with a LOADED drawn atlas; the 47 tiles, their peering
-## bits, collision and layout do not change, which is what keeps that swap cheap.
-## This stays the only file that knows how a tile looks (§4).
+## The atlas is GENERATED procedurally, not loaded from a hand-drawn PNG. The M5
+## spec's letter was to load a drawn atlas, but the owner chose a procedural first
+## pass (2026-09-19): it keeps the palette.json → whole-cave retint (§3.3) that a
+## baked PNG would lose, and it iterates via screenshots. If a hand-drawn PNG is
+## wanted later, only `_build_atlas` changes — the 47 tiles, peering bits, collision
+## and layout stay put. This is the only file that knows how a tile looks (§4).
 ##
 ## Drawn FLAT, in palette values, form but NOT lighting (§8a, D-M4-10): the
-## PointLight2D system lights the room, so baked shading here would light twice.
-## The placeholder shows edges as a seam-crack, outer corners as a 45° bevel to the
-## floor colour, and inner corners as a small notch — enough to read the blob.
+## PointLight2D system lights the room, so baked directional shading here would light
+## twice and go muddy. Body is rock_mid with subtle same-neighbour facets; the
+## wall-meets-floor seam is a distance-field contact band (uniform on every exposed
+## side, so corners resolve without a per-corner case) — see _draw_rock.
 ##
 ## Atlas layout (tiles are `tile_px` square):
 ##   row 0        — floor: 3 speckle variants (cols 0-2) + 2 rare detail (cols 3-4)
@@ -33,6 +35,16 @@ const FLOOR_COLS := FLOOR_BASE_VARIANTS + FLOOR_DETAIL_VARIANTS
 
 const ROCK_ROW_START := 1
 const ROCK_COLS := 12
+
+# Wall-meets-floor contact band, in px, measured from the rock/floor boundary by a
+# distance field (§8a). Uniform on every floor-facing side — an edge, not a
+# directional light. Because it is distance-based, convex corners darken into a soft
+# round and concave corners fill on their own, with NO per-corner special case and
+# NO silhouette carving (carving read as chipped rock, M5 review 2026-09-19). Tune
+# by feel; a wider band reads as a heavier wall base.
+const EDGE_CONTACT_PX := 1.1
+const EDGE_DEEP_PX := 2.6
+const EDGE_SHADOW_PX := 4.6
 
 # Side bits for a blob config: which cardinal neighbours are rock.
 const S_TOP := 1
@@ -160,61 +172,97 @@ static func _build_atlas(tp: int) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-## Floor: rock_shadow ground with a sparse grit of darker/lighter specks. Variants
-## 3-4 add a rare hairline crack sloping opposite ways. Deterministic per variant.
+## Floor: a rock_shadow ground, one step below the wall body, with sparse low-grit —
+## clustered rock_deep pits and a few rock_mid grains, deterministic per variant so a
+## room always paints the same. Variants 3-4 add a rare hairline crack sloping
+## opposite ways so a scatter of them never reads as one repeated diagonal.
 static func _draw_floor(img: Image, ox: int, oy: int, tp: int, variant: int) -> void:
 	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color("rock_shadow"))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1000 + variant
 	var deep := EnvPalette.color("rock_deep")
 	var mid := EnvPalette.color("rock_mid")
-	for _i in 14:
-		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), deep)
+	var void_c := EnvPalette.color("rock_void")
 	for _i in 6:
-		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), mid)
+		_blob(img, ox, oy, tp, rng.randi_range(1, tp - 3), rng.randi_range(1, tp - 3), 2, deep)
+	for _i in 3:
+		_blob(img, ox, oy, tp, rng.randi_range(1, tp - 3), rng.randi_range(1, tp - 3), 2, mid)
+	for _i in 5:
+		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), deep)
+	for _i in 2:
+		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), void_c)
 	if variant >= FLOOR_BASE_VARIANTS:
-		var void_c := EnvPalette.color("rock_void")
 		var down_right := variant == FLOOR_BASE_VARIANTS
 		for i in 9:
 			var px := (4 + i) if down_right else (tp - 5 - i)
 			img.set_pixel(ox + px, oy + 5 + int(i / 2), void_c)
 
 
-## Rock blob tile: rock_mid body with grit, a seam-crack on each floor-facing side,
-## a 45° bevel where two adjacent sides face floor (outer corner), and a small notch
-## where a corner faces floor between two rock sides (inner corner). Placeholder art.
-static func _draw_rock(img: Image, ox: int, oy: int, tp: int, sides: int, _corners: int, index: int) -> void:
+## Rock blob tile. A flat rock_mid body with subtle low-contrast facets (adjacent
+## ramp tones only, no directional gradient — the PointLights do the lighting, §8a),
+## then a distance-field CONTACT BAND darkening toward rock_void as a pixel nears the
+## floor. The band is uniform on every floor-facing side, so convex corners round and
+## concave corners fill on their own, with no per-corner case and no carved silhouette.
+static func _draw_rock(img: Image, ox: int, oy: int, tp: int, sides: int, corners: int, index: int) -> void:
 	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color("rock_mid"))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 500 + index
-	var deep := EnvPalette.color("rock_deep")
+	var shadow := EnvPalette.color("rock_shadow")
 	var lit := EnvPalette.color("rock_lit")
-	for _i in 12:
-		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), deep)
-	for _i in 6:
-		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), lit)
+	var deep := EnvPalette.color("rock_deep")
+	var high := EnvPalette.color("rock_high")
+	for _i in 5:
+		_blob(img, ox, oy, tp, rng.randi_range(2, tp - 4), rng.randi_range(2, tp - 4), rng.randi_range(2, 3), shadow)
+	for _i in 3:
+		_blob(img, ox, oy, tp, rng.randi_range(2, tp - 4), rng.randi_range(2, tp - 4), 2, lit)
+	for _i in 5:
+		img.set_pixel(ox + rng.randi_range(1, tp - 2), oy + rng.randi_range(1, tp - 2), deep)
+	for _i in 3:
+		img.set_pixel(ox + rng.randi_range(1, tp - 2), oy + rng.randi_range(1, tp - 2), high)
 
-	# Seam-crack on each floor-facing side; corners stay square. The placeholder does
-	# NOT chamfer convex corners or notch concave ones — a crude corner treatment
-	# reads as chipped rock (M5 review, 2026-09-19). Rounded corners and diagonal
-	# runs are the drawn atlas's job (Step 2); the terrain already places the right
-	# 47-blob tile per cell (proven by the hole-check and by painting a blob in the
-	# editor), which is the capability Step 1 is responsible for.
-	var crack := EnvPalette.color("rock_void")
-	var lip := EnvPalette.color("rock_deep")
-	if not (sides & S_TOP):
+	var void_c := EnvPalette.color("rock_void")
+	for y in tp:
 		for x in tp:
-			img.set_pixel(ox + x, oy, crack)
-			img.set_pixel(ox + x, oy + 1, lip)
-	if not (sides & S_BOTTOM):
-		for x in tp:
-			img.set_pixel(ox + x, oy + tp - 1, crack)
-			img.set_pixel(ox + x, oy + tp - 2, lip)
-	if not (sides & S_LEFT):
-		for y in tp:
-			img.set_pixel(ox, oy + y, crack)
-			img.set_pixel(ox + 1, oy + y, lip)
-	if not (sides & S_RIGHT):
-		for y in tp:
-			img.set_pixel(ox + tp - 1, oy + y, crack)
-			img.set_pixel(ox + tp - 2, oy + y, lip)
+			var gx := (float(x) + 0.5) / float(tp)
+			var gy := (float(y) + 0.5) / float(tp)
+			var dp := _dist_to_floor(gx, gy, sides, corners) * float(tp)
+			if dp < EDGE_CONTACT_PX:
+				img.set_pixel(ox + x, oy + y, void_c)
+			elif dp < EDGE_DEEP_PX:
+				img.set_pixel(ox + x, oy + y, deep)
+			elif dp < EDGE_SHADOW_PX:
+				img.set_pixel(ox + x, oy + y, shadow)
+
+
+## Euclidean distance (in tile units) from a point in the centre rock cell to the
+## nearest floor neighbour, over the 3×3 of rock/floor implied by (sides, corners).
+## INF when the tile is fully interior — then nothing darkens and it is pure body.
+static func _dist_to_floor(gx: float, gy: float, sides: int, corners: int) -> float:
+	var best := INF
+	best = _rect_dist(best, gx, gy, 0, -1, not (sides & S_TOP))
+	best = _rect_dist(best, gx, gy, 1, 0, not (sides & S_RIGHT))
+	best = _rect_dist(best, gx, gy, 0, 1, not (sides & S_BOTTOM))
+	best = _rect_dist(best, gx, gy, -1, 0, not (sides & S_LEFT))
+	best = _rect_dist(best, gx, gy, 1, -1, not (corners & C_TR))
+	best = _rect_dist(best, gx, gy, 1, 1, not (corners & C_BR))
+	best = _rect_dist(best, gx, gy, -1, 1, not (corners & C_BL))
+	best = _rect_dist(best, gx, gy, -1, -1, not (corners & C_TL))
+	return best
+
+
+static func _rect_dist(best: float, gx: float, gy: float, dx: int, dy: int, is_floor: bool) -> float:
+	if not is_floor:
+		return best
+	var cx := clampf(gx, float(dx), float(dx + 1))
+	var cy := clampf(gy, float(dy), float(dy + 1))
+	return minf(best, sqrt((gx - cx) * (gx - cx) + (gy - cy) * (gy - cy)))
+
+
+## A small filled square of `col`, clamped to the tile — the unit of facet grit.
+static func _blob(img: Image, ox: int, oy: int, tp: int, cx: int, cy: int, size: int, col: Color) -> void:
+	for yy in size:
+		for xx in size:
+			var px := cx + xx
+			var py := cy + yy
+			if px >= 0 and px < tp and py >= 0 and py < tp:
+				img.set_pixel(ox + px, oy + py, col)

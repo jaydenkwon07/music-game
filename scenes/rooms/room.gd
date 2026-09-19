@@ -68,6 +68,12 @@ func entry_position(entry_id: String) -> Vector2:
 
 # --- Building ---
 
+## Floor cells are painted directly with a spatial-hash variant; rock cells are
+## handed to Godot's terrain system, which picks the blob tile per cell from its
+## neighbourhood (M5 Step 1). A one-cell rock ring is added outside the grid so the
+## room's outer perimeter reads as solid rock rather than bevelling into the void —
+## those ring cells sit beyond the camera clamp and behind the perimeter wall, so
+## the player never sees or reaches them.
 func _build_tiles(grid: Array) -> void:
 	var tile_set := RockTileSet.build(_tile_px)
 	_tile_px = tile_set.tile_size.x  # single source of truth for the size (§5.2)
@@ -75,39 +81,24 @@ func _build_tiles(grid: Array) -> void:
 	layer.name = "Tiles"
 	layer.tile_set = tile_set
 	add_child(layer)
+
+	var rock_cells: Array[Vector2i] = []
 	for y in grid.size():
 		var row: String = str(grid[y])
 		for x in row.length():
-			var atlas: Vector2i
 			if row[x] == "#":
-				atlas = RockTileSet.wall_atlas(_wall_mask(grid, x, y))
+				rock_cells.append(Vector2i(x, y))
 			else:
-				atlas = RockTileSet.floor_atlas(_floor_variant(x, y))
-			layer.set_cell(Vector2i(x, y), RockTileSet.SOURCE_ID, atlas)
+				layer.set_cell(Vector2i(x, y), RockTileSet.SOURCE_ID, RockTileSet.floor_atlas(_floor_variant(x, y)))
 
+	for x in range(-1, _size.x + 1):
+		rock_cells.append(Vector2i(x, -1))
+		rock_cells.append(Vector2i(x, _size.y))
+	for y in range(_size.y):
+		rock_cells.append(Vector2i(-1, y))
+		rock_cells.append(Vector2i(_size.x, y))
 
-## Which of a wall's four sides face floor — the seam-crack goes on those (§8a).
-## Out of bounds counts as not-floor, so the room's outermost edge has no seam.
-func _wall_mask(grid: Array, x: int, y: int) -> int:
-	var mask := 0
-	if _is_floor(grid, x, y - 1):
-		mask |= RockTileSet.N
-	if _is_floor(grid, x + 1, y):
-		mask |= RockTileSet.E
-	if _is_floor(grid, x, y + 1):
-		mask |= RockTileSet.S
-	if _is_floor(grid, x - 1, y):
-		mask |= RockTileSet.W
-	return mask
-
-
-func _is_floor(grid: Array, x: int, y: int) -> bool:
-	if y < 0 or y >= grid.size():
-		return false
-	var row: String = str(grid[y])
-	if x < 0 or x >= row.length():
-		return false
-	return row[x] == "."
+	layer.set_cells_terrain_connect(rock_cells, RockTileSet.TERRAIN_SET, RockTileSet.ROCK_TERRAIN)
 
 
 ## A stable per-cell floor variant so the same room always paints the same, but

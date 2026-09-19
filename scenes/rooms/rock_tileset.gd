@@ -1,35 +1,50 @@
 class_name RockTileSet
 extends RefCounted
-## The M4 lithic tileset (§3.2, Step 3): real cave rock in the palette, replacing
-## M3's two flat swatches. Built procedurally in code so it needs no editor
-## authoring step and stays pinned to EnvPalette — rewrite palette.json and the
-## whole cave retints (§3.3). Real hand-painted tiles can replace this atlas later
-## with no other change; nothing outside here knows how a tile looks.
+## The cave tileset (§3.2). Rock is a Godot 4 TERRAIN in "match corners and sides"
+## mode — the 47-tile blob (M5 Step 1, CLAUDE.md §8): the engine picks the tile per
+## cell from its rock/floor neighbourhood, so walls can round and bevel instead of
+## being stuck at 90°. `room.gd` no longer computes an adjacency mask by hand; it
+## calls set_cells_terrain_connect and the terrain set does the rest.
 ##
-## Drawn FLAT, in palette values, with form but NOT lighting (§8a, D-M4-10): the
-## Step 2 PointLight2D system does the lighting, so any baked directional shading
-## here would light the rock twice and read muddy. The only edge treatment is a
-## geometric seam-crack where wall meets floor — form, not a light gradient.
+## The atlas here is still GENERATED (a placeholder), so Step 1's gate — paint a
+## blob and confirm the edges resolve — can be met before any art exists. Step 2
+## replaces `_build_atlas` with a LOADED drawn atlas; the 47 tiles, their peering
+## bits, collision and layout do not change, which is what keeps that swap cheap.
+## This stays the only file that knows how a tile looks (§4).
 ##
-## Atlas layout (20px tiles):
-##   row 0 — floor: 3 speckle variants (cols 0-2) + 1 rare detail (col 3)
-##   row 1 — wall:  16 tiles, one per 4-neighbour floor-adjacency mask (N E S W)
-## The Room reads the tile size back from the built TileSet (§5.2).
+## Drawn FLAT, in palette values, form but NOT lighting (§8a, D-M4-10): the
+## PointLight2D system lights the room, so baked shading here would light twice.
+## The placeholder shows edges as a seam-crack, outer corners as a 45° bevel to the
+## floor colour, and inner corners as a small notch — enough to read the blob.
+##
+## Atlas layout (tiles are `tile_px` square):
+##   row 0        — floor: 3 speckle variants (cols 0-2) + 2 rare detail (cols 3-4)
+##   rows 1..     — the 47 rock blob tiles, ROCK_COLS per row, in _blob_configs order
+## Floor tiles carry no terrain — floor variety stays a spatial hash in room.gd (§4).
 
 const SOURCE_ID := 0
+const TERRAIN_SET := 0
+const ROCK_TERRAIN := 0
 
 const FLOOR_ROW := 0
-const WALL_ROW := 1
 const FLOOR_BASE_VARIANTS := 3   # cols 0-2 are interchangeable floor
 const FLOOR_DETAIL_VARIANTS := 2 # cols 3-4 are rare detail (a crack, two directions)
 const FLOOR_COLS := FLOOR_BASE_VARIANTS + FLOOR_DETAIL_VARIANTS
-const ATLAS_COLS := 16           # widest row is the 16 wall masks
 
-# Neighbour-adjacency bits for the wall mask: set when that neighbour is floor.
-const N := 1
-const E := 2
-const S := 4
-const W := 8
+const ROCK_ROW_START := 1
+const ROCK_COLS := 12
+
+# Side bits for a blob config: which cardinal neighbours are rock.
+const S_TOP := 1
+const S_RIGHT := 2
+const S_BOTTOM := 4
+const S_LEFT := 8
+# Corner bits: which diagonal neighbours are rock. A corner is only ever set when
+# both its adjacent sides are (the constraint that reduces 256 combos to 47).
+const C_TR := 1
+const C_BR := 2
+const C_BL := 4
+const C_TL := 8
 
 
 ## Atlas coord for a floor tile. `variant` 0..2 are base speckles; 3-4 are detail.
@@ -37,9 +52,32 @@ static func floor_atlas(variant: int) -> Vector2i:
 	return Vector2i(clampi(variant, 0, FLOOR_COLS - 1), FLOOR_ROW)
 
 
-## Atlas coord for a wall tile with the given floor-adjacency mask (0..15).
-static func wall_atlas(mask: int) -> Vector2i:
-	return Vector2i(mask & 15, WALL_ROW)
+## The 47 valid corners-and-sides blob configurations, as [sides, corners] pairs,
+## in a stable order. Tile i in the atlas is configs[i]; build() and _build_atlas
+## both index this, so drawing and peering bits always agree.
+static func _blob_configs() -> Array:
+	var out: Array = []
+	for sides in 16:
+		var eligible: Array = []
+		if (sides & S_TOP) and (sides & S_RIGHT):
+			eligible.append(C_TR)
+		if (sides & S_BOTTOM) and (sides & S_RIGHT):
+			eligible.append(C_BR)
+		if (sides & S_BOTTOM) and (sides & S_LEFT):
+			eligible.append(C_BL)
+		if (sides & S_TOP) and (sides & S_LEFT):
+			eligible.append(C_TL)
+		for subset in (1 << eligible.size()):
+			var corners := 0
+			for k in eligible.size():
+				if subset & (1 << k):
+					corners |= eligible[k]
+			out.append([sides, corners])
+	return out
+
+
+static func _rock_coord(index: int) -> Vector2i:
+	return Vector2i(index % ROCK_COLS, ROCK_ROW_START + index / ROCK_COLS)
 
 
 static func build(tile_px: int) -> TileSet:
@@ -47,6 +85,12 @@ static func build(tile_px: int) -> TileSet:
 	tile_set.tile_size = Vector2i(tile_px, tile_px)
 	tile_set.add_physics_layer()     # layer 0
 	tile_set.add_occlusion_layer()   # layer 0, so walls cast light shadow (§5.1)
+
+	tile_set.add_terrain_set()
+	tile_set.set_terrain_set_mode(TERRAIN_SET, TileSet.TERRAIN_MODE_MATCH_CORNERS_AND_SIDES)
+	tile_set.add_terrain(TERRAIN_SET)
+	tile_set.set_terrain_name(TERRAIN_SET, ROCK_TERRAIN, "rock")
+	tile_set.set_terrain_color(TERRAIN_SET, ROCK_TERRAIN, EnvPalette.color("rock_mid"))
 
 	var source := TileSetAtlasSource.new()
 	source.texture = _build_atlas(tile_px)
@@ -56,16 +100,23 @@ static func build(tile_px: int) -> TileSet:
 	for v in FLOOR_COLS:
 		source.create_tile(Vector2i(v, FLOOR_ROW))
 
-	# Every wall mask gets the full-tile collision polygon and light occluder.
 	var half := float(tile_px) * 0.5
 	var square := PackedVector2Array([
 		Vector2(-half, -half), Vector2(half, -half),
 		Vector2(half, half), Vector2(-half, half),
 	])
-	for mask in 16:
-		var coord := Vector2i(mask, WALL_ROW)
+	var configs := _blob_configs()
+	for i in configs.size():
+		var sides: int = configs[i][0]
+		var corners: int = configs[i][1]
+		var coord := _rock_coord(i)
 		source.create_tile(coord)
 		var td := source.get_tile_data(coord, 0)
+		td.terrain_set = TERRAIN_SET
+		td.terrain = ROCK_TERRAIN
+		_set_peering(td, sides, corners)
+		# Collision stays a full 30px square regardless of the drawn bevel (§8): it
+		# is impassable either way and the player can't tell.
 		td.set_collision_polygons_count(0, 1)
 		td.set_collision_polygon_points(0, 0, square)
 		var occ := OccluderPolygon2D.new()
@@ -75,20 +126,42 @@ static func build(tile_px: int) -> TileSet:
 	return tile_set
 
 
-# --- Pixel drawing (flat, palette values, form not lighting) ---
+static func _set_peering(td: TileData, sides: int, corners: int) -> void:
+	if sides & S_TOP:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_TOP_SIDE, ROCK_TERRAIN)
+	if sides & S_RIGHT:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_RIGHT_SIDE, ROCK_TERRAIN)
+	if sides & S_BOTTOM:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_BOTTOM_SIDE, ROCK_TERRAIN)
+	if sides & S_LEFT:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_LEFT_SIDE, ROCK_TERRAIN)
+	if corners & C_TR:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER, ROCK_TERRAIN)
+	if corners & C_BR:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER, ROCK_TERRAIN)
+	if corners & C_BL:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER, ROCK_TERRAIN)
+	if corners & C_TL:
+		td.set_terrain_peering_bit(TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER, ROCK_TERRAIN)
+
+
+# --- Pixel drawing (flat, palette values, form not lighting; placeholder only) ---
 
 static func _build_atlas(tp: int) -> ImageTexture:
-	var img := Image.create(ATLAS_COLS * tp, 2 * tp, false, Image.FORMAT_RGBA8)
+	var configs := _blob_configs()
+	var rock_rows := (configs.size() + ROCK_COLS - 1) / ROCK_COLS
+	var cols: int = maxi(FLOOR_COLS, ROCK_COLS)
+	var img := Image.create(cols * tp, (ROCK_ROW_START + rock_rows) * tp, false, Image.FORMAT_RGBA8)
 	for v in FLOOR_COLS:
 		_draw_floor(img, v * tp, FLOOR_ROW * tp, tp, v)
-	for mask in 16:
-		_draw_wall(img, mask * tp, WALL_ROW * tp, tp, mask)
+	for i in configs.size():
+		var coord := _rock_coord(i)
+		_draw_rock(img, coord.x * tp, coord.y * tp, tp, configs[i][0], configs[i][1], i)
 	return ImageTexture.create_from_image(img)
 
 
-## Floor: rock_shadow ground with a sparse grit of darker and lighter palette
-## specks so a large floor never reads as one flat colour. Variant 3 adds a rare
-## hairline crack. Deterministic per variant so the atlas is reproducible.
+## Floor: rock_shadow ground with a sparse grit of darker/lighter specks. Variants
+## 3-4 add a rare hairline crack sloping opposite ways. Deterministic per variant.
 static func _draw_floor(img: Image, ox: int, oy: int, tp: int, variant: int) -> void:
 	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color("rock_shadow"))
 	var rng := RandomNumberGenerator.new()
@@ -100,8 +173,6 @@ static func _draw_floor(img: Image, ox: int, oy: int, tp: int, variant: int) -> 
 	for _i in 6:
 		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), mid)
 	if variant >= FLOOR_BASE_VARIANTS:
-		# A rare hairline crack; the two detail variants slope opposite ways so a
-		# scatter of them never reads as one repeated diagonal.
 		var void_c := EnvPalette.color("rock_void")
 		var down_right := variant == FLOOR_BASE_VARIANTS
 		for i in 9:
@@ -109,13 +180,13 @@ static func _draw_floor(img: Image, ox: int, oy: int, tp: int, variant: int) -> 
 			img.set_pixel(ox + px, oy + 5 + int(i / 2), void_c)
 
 
-## Wall: rock_mid stone with blocky grit, then a seam-crack on each edge that
-## faces floor (§8a — geometric form, uniform on every exposed side, so it is an
-## edge and not a directional light). Seeded by mask so different masks differ.
-static func _draw_wall(img: Image, ox: int, oy: int, tp: int, mask: int) -> void:
+## Rock blob tile: rock_mid body with grit, a seam-crack on each floor-facing side,
+## a 45° bevel where two adjacent sides face floor (outer corner), and a small notch
+## where a corner faces floor between two rock sides (inner corner). Placeholder art.
+static func _draw_rock(img: Image, ox: int, oy: int, tp: int, sides: int, _corners: int, index: int) -> void:
 	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color("rock_mid"))
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 500 + mask
+	rng.seed = 500 + index
 	var deep := EnvPalette.color("rock_deep")
 	var lit := EnvPalette.color("rock_lit")
 	for _i in 12:
@@ -123,21 +194,27 @@ static func _draw_wall(img: Image, ox: int, oy: int, tp: int, mask: int) -> void
 	for _i in 6:
 		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), lit)
 
-	var crack := EnvPalette.color("rock_void")  # the seam itself
-	var lip := EnvPalette.color("rock_deep")     # one step into the wall
-	if mask & N:
+	# Seam-crack on each floor-facing side; corners stay square. The placeholder does
+	# NOT chamfer convex corners or notch concave ones — a crude corner treatment
+	# reads as chipped rock (M5 review, 2026-09-19). Rounded corners and diagonal
+	# runs are the drawn atlas's job (Step 2); the terrain already places the right
+	# 47-blob tile per cell (proven by the hole-check and by painting a blob in the
+	# editor), which is the capability Step 1 is responsible for.
+	var crack := EnvPalette.color("rock_void")
+	var lip := EnvPalette.color("rock_deep")
+	if not (sides & S_TOP):
 		for x in tp:
 			img.set_pixel(ox + x, oy, crack)
 			img.set_pixel(ox + x, oy + 1, lip)
-	if mask & S:
+	if not (sides & S_BOTTOM):
 		for x in tp:
 			img.set_pixel(ox + x, oy + tp - 1, crack)
 			img.set_pixel(ox + x, oy + tp - 2, lip)
-	if mask & W:
+	if not (sides & S_LEFT):
 		for y in tp:
 			img.set_pixel(ox, oy + y, crack)
 			img.set_pixel(ox + 1, oy + y, lip)
-	if mask & E:
+	if not (sides & S_RIGHT):
 		for y in tp:
 			img.set_pixel(ox + tp - 1, oy + y, crack)
 			img.set_pixel(ox + tp - 2, oy + y, lip)

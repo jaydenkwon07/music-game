@@ -15,9 +15,10 @@ extends RefCounted
 ##
 ## Drawn FLAT, in palette values, form but NOT lighting (§8a, D-M4-10): the
 ## PointLight2D system lights the room, so baked directional shading here would light
-## twice and go muddy. Body is rock_mid with subtle same-neighbour facets; the
-## wall-meets-floor seam is a distance-field contact band (uniform on every exposed
-## side, so corners resolve without a per-corner case) — see _draw_rock.
+## twice and go muddy. Tones and feel come from a RockStyle (M5 Step 2b): the floor
+## reads LIGHTER than the rock body so the room is legible without the outline, with
+## subtle facets and a distance-field contact seam (uniform on every exposed side, so
+## corners resolve without a per-corner case) — see RockStyle and _draw_rock.
 ##
 ## Atlas layout (tiles are `tile_px` square):
 ##   row 0        — floor: 3 speckle variants (cols 0-2) + 2 rare detail (cols 3-4)
@@ -36,15 +37,18 @@ const FLOOR_COLS := FLOOR_BASE_VARIANTS + FLOOR_DETAIL_VARIANTS
 const ROCK_ROW_START := 1
 const ROCK_COLS := 12
 
-# Wall-meets-floor contact band, in px, measured from the rock/floor boundary by a
-# distance field (§8a). Uniform on every floor-facing side — an edge, not a
-# directional light. Because it is distance-based, convex corners darken into a soft
-# round and concave corners fill on their own, with NO per-corner special case and
-# NO silhouette carving (carving read as chipped rock, M5 review 2026-09-19). Tune
-# by feel; a wider band reads as a heavier wall base.
-const EDGE_CONTACT_PX := 1.1
-const EDGE_DEEP_PX := 2.6
-const EDGE_SHADOW_PX := 4.6
+# Internal facet/grit tones (palette NAMES). The value-gap tones (floor, rock),
+# the seam tone and the feel NUMBERS live in RockStyle (@export, M5 Step 2b); these
+# are the sub-tones the flat texture is built from — a lighter fleck and a darker
+# crack around the body — and stay structural, not per-room tuning. The contact seam
+# itself is a distance field (§8a): uniform on every floor-facing side, so it outlines
+# corners with no per-corner case and no carved silhouette.
+const _ROCK_FLECK := "rock_shadow"   # a lighter fleck on the dark rock body
+const _ROCK_CRACK := "rock_void"     # a darker crack
+const _ROCK_GRAIN := "rock_mid"      # a rare bright grain
+const _FLOOR_PIT := "rock_deep"      # a darker pit in the floor
+const _FLOOR_GRAIN := "rock_mid"     # a lighter grain
+const _FLOOR_INK := "rock_void"      # crack / pebble ink
 
 # Side bits for a blob config: which cardinal neighbours are rock.
 const S_TOP := 1
@@ -92,7 +96,9 @@ static func _rock_coord(index: int) -> Vector2i:
 	return Vector2i(index % ROCK_COLS, ROCK_ROW_START + index / ROCK_COLS)
 
 
-static func build(tile_px: int) -> TileSet:
+static func build(tile_px: int, style: RockStyle = null) -> TileSet:
+	if style == null:
+		style = RockStyle.new()
 	var tile_set := TileSet.new()
 	tile_set.tile_size = Vector2i(tile_px, tile_px)
 	tile_set.add_physics_layer()     # layer 0
@@ -102,10 +108,10 @@ static func build(tile_px: int) -> TileSet:
 	tile_set.set_terrain_set_mode(TERRAIN_SET, TileSet.TERRAIN_MODE_MATCH_CORNERS_AND_SIDES)
 	tile_set.add_terrain(TERRAIN_SET)
 	tile_set.set_terrain_name(TERRAIN_SET, ROCK_TERRAIN, "rock")
-	tile_set.set_terrain_color(TERRAIN_SET, ROCK_TERRAIN, EnvPalette.color("rock_mid"))
+	tile_set.set_terrain_color(TERRAIN_SET, ROCK_TERRAIN, EnvPalette.color(style.rock_tone))
 
 	var source := TileSetAtlasSource.new()
-	source.texture = _build_atlas(tile_px)
+	source.texture = _build_atlas(tile_px, style)
 	source.texture_region_size = Vector2i(tile_px, tile_px)
 	tile_set.add_source(source, SOURCE_ID)
 
@@ -159,79 +165,78 @@ static func _set_peering(td: TileData, sides: int, corners: int) -> void:
 
 # --- Pixel drawing (flat, palette values, form not lighting; placeholder only) ---
 
-static func _build_atlas(tp: int) -> ImageTexture:
+static func _build_atlas(tp: int, style: RockStyle) -> ImageTexture:
 	var configs := _blob_configs()
 	var rock_rows := (configs.size() + ROCK_COLS - 1) / ROCK_COLS
 	var cols: int = maxi(FLOOR_COLS, ROCK_COLS)
 	var img := Image.create(cols * tp, (ROCK_ROW_START + rock_rows) * tp, false, Image.FORMAT_RGBA8)
 	for v in FLOOR_COLS:
-		_draw_floor(img, v * tp, FLOOR_ROW * tp, tp, v)
+		_draw_floor(img, v * tp, FLOOR_ROW * tp, tp, v, style)
 	for i in configs.size():
 		var coord := _rock_coord(i)
-		_draw_rock(img, coord.x * tp, coord.y * tp, tp, configs[i][0], configs[i][1], i)
+		_draw_rock(img, coord.x * tp, coord.y * tp, tp, configs[i][0], configs[i][1], i, style)
 	return ImageTexture.create_from_image(img)
 
 
-## Floor: a rock_shadow ground, one step below the wall body, with sparse low-grit —
-## clustered rock_deep pits and a few rock_mid grains, deterministic per variant so a
-## room always paints the same. Variants 3-4 add a rare hairline crack sloping
-## opposite ways so a scatter of them never reads as one repeated diagonal.
-static func _draw_floor(img: Image, ox: int, oy: int, tp: int, variant: int) -> void:
-	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color("rock_shadow"))
+## Floor: the style's floor_tone ground (LIGHTER than the rock body, so the room
+## reads without leaning on the outline), with sparse low-grit — darker pits and a
+## few lighter grains, deterministic per variant so a room always paints the same.
+## Variant 3 is a hairline crack, variant 4 a small pebble cluster.
+static func _draw_floor(img: Image, ox: int, oy: int, tp: int, variant: int, style: RockStyle) -> void:
+	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color(style.floor_tone))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1000 + variant
-	var deep := EnvPalette.color("rock_deep")
-	var mid := EnvPalette.color("rock_mid")
-	var void_c := EnvPalette.color("rock_void")
-	for _i in 6:
-		_blob(img, ox, oy, tp, rng.randi_range(1, tp - 3), rng.randi_range(1, tp - 3), 2, deep)
-	for _i in 3:
-		_blob(img, ox, oy, tp, rng.randi_range(1, tp - 3), rng.randi_range(1, tp - 3), 2, mid)
-	for _i in 5:
-		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), deep)
+	var pit := EnvPalette.color(_FLOOR_PIT)
+	var grain := EnvPalette.color(_FLOOR_GRAIN)
+	var ink := EnvPalette.color(_FLOOR_INK)
+	for _i in style.floor_pit_count:
+		_blob(img, ox, oy, tp, rng.randi_range(1, tp - 3), rng.randi_range(1, tp - 3), 2, pit)
+	for _i in maxi(1, style.floor_pit_count / 2):
+		_blob(img, ox, oy, tp, rng.randi_range(1, tp - 3), rng.randi_range(1, tp - 3), 2, grain)
 	for _i in 2:
-		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), void_c)
-	if variant >= FLOOR_BASE_VARIANTS:
-		var down_right := variant == FLOOR_BASE_VARIANTS
-		for i in 9:
-			var px := (4 + i) if down_right else (tp - 5 - i)
-			img.set_pixel(ox + px, oy + 5 + int(i / 2), void_c)
+		img.set_pixel(ox + rng.randi_range(0, tp - 1), oy + rng.randi_range(0, tp - 1), ink)
+	if variant == FLOOR_BASE_VARIANTS:
+		for i in 9:  # a hairline crack sloping down-right
+			img.set_pixel(ox + 4 + i, oy + 5 + int(i / 2), ink)
+	elif variant > FLOOR_BASE_VARIANTS:
+		var cx := tp / 2 + rng.randi_range(-4, 4)  # a small pebble cluster
+		var cy := tp / 2 + rng.randi_range(-4, 4)
+		for _i in 5:
+			_blob(img, ox, oy, tp, cx + rng.randi_range(-3, 3), cy + rng.randi_range(-3, 3), 2, pit)
+		for _i in 2:
+			_blob(img, ox, oy, tp, cx + rng.randi_range(-3, 3), cy + rng.randi_range(-3, 3), 2, grain)
 
 
-## Rock blob tile. A flat rock_mid body with subtle low-contrast facets (adjacent
-## ramp tones only, no directional gradient — the PointLights do the lighting, §8a),
-## then a distance-field CONTACT BAND darkening toward rock_void as a pixel nears the
-## floor. The band is uniform on every floor-facing side, so convex corners round and
-## concave corners fill on their own, with no per-corner case and no carved silhouette.
-static func _draw_rock(img: Image, ox: int, oy: int, tp: int, sides: int, corners: int, index: int) -> void:
-	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color("rock_mid"))
+## Rock blob tile. A flat body in the style's rock_tone (DARKER than the floor) with
+## subtle low-contrast facets — a lighter fleck, a darker crack, a rare bright grain,
+## no directional gradient (the PointLights do the lighting, §8a). Then a
+## distance-field CONTACT SEAM in the style's seam_tone where the rock nears floor:
+## uniform on every floor-facing side, so it outlines corners with no per-corner case
+## and no carved silhouette.
+static func _draw_rock(img: Image, ox: int, oy: int, tp: int, sides: int, corners: int, index: int, style: RockStyle) -> void:
+	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color(style.rock_tone))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 500 + index
-	var shadow := EnvPalette.color("rock_shadow")
-	var lit := EnvPalette.color("rock_lit")
-	var deep := EnvPalette.color("rock_deep")
-	var high := EnvPalette.color("rock_high")
-	for _i in 5:
-		_blob(img, ox, oy, tp, rng.randi_range(2, tp - 4), rng.randi_range(2, tp - 4), rng.randi_range(2, 3), shadow)
-	for _i in 3:
-		_blob(img, ox, oy, tp, rng.randi_range(2, tp - 4), rng.randi_range(2, tp - 4), 2, lit)
-	for _i in 5:
-		img.set_pixel(ox + rng.randi_range(1, tp - 2), oy + rng.randi_range(1, tp - 2), deep)
-	for _i in 3:
-		img.set_pixel(ox + rng.randi_range(1, tp - 2), oy + rng.randi_range(1, tp - 2), high)
+	var fleck := EnvPalette.color(_ROCK_FLECK)
+	var crack := EnvPalette.color(_ROCK_CRACK)
+	var grain := EnvPalette.color(_ROCK_GRAIN)
+	for _i in style.rock_facet_count:
+		_blob(img, ox, oy, tp, rng.randi_range(2, tp - 4), rng.randi_range(2, tp - 4), rng.randi_range(2, 3), fleck)
+	for _i in maxi(1, style.rock_facet_count - 2):
+		img.set_pixel(ox + rng.randi_range(1, tp - 2), oy + rng.randi_range(1, tp - 2), crack)
+	for _i in 2:
+		img.set_pixel(ox + rng.randi_range(1, tp - 2), oy + rng.randi_range(1, tp - 2), grain)
 
-	var void_c := EnvPalette.color("rock_void")
+	var seam := EnvPalette.color(style.seam_tone)
+	if style.seam_px <= 0.0:
+		return
 	for y in tp:
 		for x in tp:
 			var gx := (float(x) + 0.5) / float(tp)
 			var gy := (float(y) + 0.5) / float(tp)
 			var dp := _dist_to_floor(gx, gy, sides, corners) * float(tp)
-			if dp < EDGE_CONTACT_PX:
-				img.set_pixel(ox + x, oy + y, void_c)
-			elif dp < EDGE_DEEP_PX:
-				img.set_pixel(ox + x, oy + y, deep)
-			elif dp < EDGE_SHADOW_PX:
-				img.set_pixel(ox + x, oy + y, shadow)
+			if dp < style.seam_px:
+				img.set_pixel(ox + x, oy + y, seam)
 
 
 ## Euclidean distance (in tile units) from a point in the centre rock cell to the

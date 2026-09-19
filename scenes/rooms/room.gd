@@ -19,6 +19,10 @@ signal transition_requested(to_room: String, to_entry: String)
 ## off it.
 @export var room_id: String = ""
 
+## The cave tile look (M5 Step 2b). Left null uses RockStyle's defaults; assign a
+## .tres to retune floor/rock value gap, seam and grit without touching code.
+@export var rock_style: RockStyle
+
 ## Tiles inside from a gated link its door sits, so the instrument state is never
 ## entered flush against a room edge where a camera push-in has nowhere to go
 ## (§6.4, design doc §3.7). 4 tiles at 640×360 is the M4 double of M3's 2 (§4.2):
@@ -75,7 +79,7 @@ func entry_position(entry_id: String) -> Vector2:
 ## those ring cells sit beyond the camera clamp and behind the perimeter wall, so
 ## the player never sees or reaches them.
 func _build_tiles(grid: Array) -> void:
-	var tile_set := RockTileSet.build(_tile_px)
+	var tile_set := RockTileSet.build(_tile_px, rock_style)
 	_tile_px = tile_set.tile_size.x  # single source of truth for the size (§5.2)
 	var layer := TileMapLayer.new()
 	layer.name = "Tiles"
@@ -86,7 +90,10 @@ func _build_tiles(grid: Array) -> void:
 	for y in grid.size():
 		var row: String = str(grid[y])
 		for x in row.length():
-			if row[x] == "#":
+			# '#' is solid rock; 'o' is an interior outcrop — also rock for terrain and
+			# collision, kept a distinct symbol only so the mask can count it apart from
+			# "unreached" perimeter rock (M5 Step 4). Everything else is floor.
+			if row[x] == "#" or row[x] == "o":
 				rock_cells.append(Vector2i(x, y))
 			else:
 				layer.set_cell(Vector2i(x, y), RockTileSet.SOURCE_ID, RockTileSet.floor_atlas(_floor_variant(x, y)))

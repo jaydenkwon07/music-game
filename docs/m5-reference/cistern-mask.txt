@@ -1,0 +1,82 @@
+CISTERN TILE MASK  (M5 reference)
+================================================================
+Grid: 48 cols x 36 rows, 30px tiles (1440x1080 px = 1.5 x 2 screens).
+Coordinates are 0-indexed tile cells, origin top-left, x = column, y = row.
+This file is the authority for tile positions. The PNGs are illustrative
+for look; if they ever disagree with this file, this file wins.
+
+Legend (grid section)
+  #  solid rock (collision)
+  .  walkable floor (includes the corridor slots below)
+  o  interior outcrop: rock for collision and terrain, free-standing mass
+     (kept distinct only so it is not counted as "unreached" rock)
+
+Counts: floor 1177, rock 517, outcrop 34.
+Solid rock is 29.9% of bounds (outcrops excluded; spec asks 20-30%).
+Collision = this grid exactly. The bevelled / overhanging silhouette in the
+PNGs is what the terrain tiles should produce; do not reproduce it in data.
+
+Exits (corridor slots are 2 tiles wide, straight, all floor '.')
+  N  Door Omega, 3 gems    cols 23-24, rows 0-3   door leaf cells: cols 23-24, rows 1-2
+  E  Door A, 1 gem         cols 44-47, rows 13-14   door leaf cells: cols 45-46, rows 13-14
+  S  five-gem door, sealed cols 33-34, rows 32-35   door leaf cells: cols 33-34, rows 33-34
+  W  ordinary exit, no door cols 0-4, rows 26-27
+
+Door footprints (frame + jambs; jamb cells are rock '#' in the grid)
+  N  cols 22-25, rows 1-2
+  E  cols 45-46, rows 12-15
+  S  cols 32-35, rows 33-34
+  Reserve these in geometry only. Door art is M5 Step 5, not part of this file.
+
+Approach clearance (must stay floor, nothing placed on them)
+  N  cols 23-24, rows 3-4
+  E  cols 43-44, rows 13-14
+  S  cols 33-34, rows 31-32
+
+Edge-band trigger tiles (outermost tile of each corridor)
+  N  cols 23-24, row 0
+  E  col 47, rows 13-14
+  S  cols 33-34, row 35
+  W  col 0, rows 26-27
+
+Illustrative object positions (not authoritative)
+  chime beside Door A: tile (38, 10)
+  player, light radii and light positions in the PNGs are placeholders
+
+--- grid: next 36 lines, 48 chars each ---
+#######################..#######################
+#######################..#######################
+#######################..#######################
+#######################..#######################
+###########..........................###########
+##########............................##########
+#########..............................#########
+########.................................#######
+######....................................######
+#####......................oo..............#####
+####.......................ooo.............#####
+###.........................oo.............#####
+##..........................................####
+##..............................................
+##.......oo.....................................
+##.......ooo................................####
+###......o..................................####
+##............................................##
+##............................................##
+##..............oo............................##
+##.............oooo..........................###
+##..............ooo..........................###
+####.............oo..........................###
+####..........................oo.............###
+#####.........................ooo............###
+#####........................oooo............###
+...............................o.............###
+..............................................##
+#####.........................................##
+#####.........................................##
+####..........................................##
+####..........................................##
+##.............................##..##.........##
+##...........................####..####......###
+#################################..#############
+#################################..#############

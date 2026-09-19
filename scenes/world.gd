@@ -102,7 +102,7 @@ func _on_shake_requested(strength: float, duration: float) -> void:
 
 
 ## Offset the camera by a decaying, whole-pixel jitter. Whole pixels keep it on the
-## 640×360 grid so it shakes rather than shimmers (§9); it settles back to zero.
+## 960×540 grid so it shakes rather than shimmers (§9); it settles back to zero.
 func _update_shake(delta: float) -> void:
 	var camera := player.get_node_or_null("Camera2D") as Camera2D
 	if camera == null:

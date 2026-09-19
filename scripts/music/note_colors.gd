@@ -2,7 +2,7 @@ class_name NoteColors
 extends RefCounted
 ## Category -> colour. PURE: no nodes, no signals, no engine state (§4 pure seam).
 ##
-## §6, "colour is load-bearing": at 320x180 there's no room to draw a staff on a
+## §6, "colour is load-bearing": at 960×540 there's no room to draw a staff on a
 ## door, so colour is the primary channel for showing a melody. Hue comes from a
 ## note's *category* and its index within that category — never from pitch — and
 ## octave sets brightness. Every note visual in the game routes through here so

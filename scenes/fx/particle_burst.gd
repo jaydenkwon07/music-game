@@ -3,7 +3,7 @@ extends Node2D
 ## A short-lived burst of small square particles (M4 Step 6, §9). Presentational
 ## only, self-freeing: used for the sparkle on a played note and the dust on a door
 ## unlock. Drawn by hand — small squares snapped to whole pixels — rather than via
-## CPUParticles2D, so it reads crisp at 640×360 and never non-integer-scales a
+## CPUParticles2D, so it reads crisp at 960×540 and never non-integer-scales a
 ## sprite (§9). Colour is passed in from the caller (a note colour), never authored.
 ##
 ## Spawn with the static factory, then add it as a child at the burst position:

@@ -1,17 +1,24 @@
 # M4 — Art direction and the first finished room · Progress
 
-**Status:** in progress. The code steps are built (0–2, plus Step 4 silhouettes
-and Step 6 motion); the drawn-art steps (3 real tileset, 5 Room A) and Step 7
-record are not. **Date:** 2026-09-18.
-**Spec:** `docs/m4-spec.md`. **Gates:** both owner sign-offs approved
-(2026-09-18) — the §4 resolution decision (Q27) and the §3 art direction — so
-this work builds on **960×540 / 32×18** and the lithic-base / resonant-doors
-direction. (Resolution was first set to 640×360, then bumped to 960×540 the same
-day — see Step 0.)
+**Status: CLOSED 2026-09-18 as a code milestone; the drawn-art steps are
+deferred.** The systems/code steps are built and verified — Steps 0–2 (resolution,
+palette + font, lighting + render pipeline), **Step 4** (object silhouettes) and
+**Step 6** (motion / game feel). The **drawn-art steps — 3 (real cave tileset) and
+5 (Room A composed to store-page quality) — and therefore the §1 gate itself — are
+consciously deferred to a future milestone** (owner decision, 2026-09-18, while
+re-planning the roadmap). This is a conscious close with the gate **not met, not
+faked**: `rock_tileset.gd` is still a procedural placeholder.
+**Date:** 2026-09-18.
+**Spec:** `docs/m4-spec.md`. **Gates:** both owner sign-offs approved (2026-09-18)
+— the §4 resolution decision (Q27) and the §3 art direction — so this work builds
+on **960×540 / 32×18** and the lithic-base / resonant-doors direction. (Resolution
+was first set to 640×360, then bumped to 960×540 the same day — see Step 0.)
 
-This records the slice that was built ahead of this commit. It is **not** the
-M4 completion record — the §1 gate (a store-page still of Room A) is unmet, and
-`CLAUDE.md` §8 still lists M4 as in progress.
+What M4 delivered: the game's technical visual foundation — a fixed-resolution
+pixel-art render pipeline, a data-driven environment palette, a dynamic lighting
+model, distinct object silhouettes, and a full motion/game-feel pass including the
+door-unlock payoff. What it deliberately did **not** deliver: the hand-drawn art
+that makes Room A a store-page still. That art is a future milestone's work.
 
 ---
 
@@ -125,12 +132,21 @@ feel on `godot .` (§10):
 
 ---
 
-## What's not in (remaining M4)
+## Deferred to a future milestone (not part of closed M4)
 
-- **Step 3 — real cave tileset** (drawn art; `rock_tileset.gd` is a placeholder).
-- **Step 5 — Room A to completion** (the §1 store-page-still gate). Not started.
-- **Step 7 — full record + reference still.** This doc is the interim record.
-- **Post-processing effects** — the pipeline is ready to host them; none attached.
+These were M4 steps on paper; on closing M4 they move forward, to be folded into
+the re-planned roadmap (owner, 2026-09-18):
+
+- **Step 3 — real cave tileset** (drawn art; `rock_tileset.gd` is the placeholder
+  it replaces).
+- **Step 5 — Room A composed to store-page quality** — this *is* the §1 gate.
+- **Step 7 — reference still of Room A** — can't be captured until 3 + 5 exist.
+- **Post-processing effects** (bloom / vignette) — the render pipeline is built to
+  host them; none attached.
+
+The lighting, palette, silhouettes and render pipeline this milestone built are
+exactly the substrate that art work plugs into, so nothing here is blocked on
+re-work — only on drawing.
 
 ---
 

@@ -1,21 +1,34 @@
-# Music Game — M2, one data-driven door
+# Music Game
 
-Godot 4.7 project. Top-down, 320×180 internal resolution, integer-scaled.
+Godot 4.7 project. A 2D top-down game where the player collects musical notes and
+plays melodies to open doors. **960×540 internal resolution**, integer-scaled
+(fixed pixel-art SubViewport upscaled ×2→1080p / ×4→4K, letterboxed). Pixel art,
+keyboard only, PC.
 
-Design doc lives separately (`music-game-design-doc.md` / Google Drive → Game Design Logs).
-Milestone record: `docs/m2-progress.md` (spec: `docs/m2-spec.md`).
+Design doc lives separately (`music-game-design-doc.md` / Google Drive → Game
+Design Logs). The working agreement is `CLAUDE.md`; per-milestone records are in
+`docs/`.
 
 ## State
 
-**M0, M1 and M2 built and verified.** M0 is movement + the data seam; M1 is the
-note toy (playing notes that sound and make visible effects); **M2 is one
-data-driven door** — the player starts empty, collects notes, and a door opens
-when the right melody is played on it in an Ocarina-style instrument state.
+**M0–M4 built.** M0 movement + data seam; M1 the note toy; M2 one data-driven
+door; M3 the vertical slice (four rooms, real transitions, persistent doors,
+clue chimes, room-clamped camera, instrument-state keyboard widget); **M4 the
+technical visual foundation.**
 
-The M2 gate is met: **change a door's melody JSON and it wants a different tune
-with a different number of gems, no code touched.** M1's aesthetic gate ("does
-playing feel good on its own") is still **deferred until the placeholder sine is
-replaced with real composed sound.** Next is M3, the vertical slice.
+**M4 is closed as a *code* milestone** (2026-09-18): the fixed-resolution render
+pipeline, a data-driven environment palette (`EnvPalette`), dynamic lighting,
+distinct object silhouettes, and a full motion / game-feel pass including the
+door-unlock payoff. Its **drawn-art steps — the real cave tileset and Room A
+composed to store-page quality — were consciously deferred** to a future
+milestone; the tileset is still a procedural placeholder, so M4's store-page gate
+is *not* claimed met. Record: `docs/m4-progress.md`.
+
+Open gates carried forward: **M3's play-through gate** (a stranger gets the loop
+in 5–10 min) is runnable but not yet run; **M1's aesthetic gate** ("does playing
+feel good on its own") stays deferred until the placeholder sine is replaced with
+real composed sound. **The roadmap beyond M4 is being re-planned** — a new spec /
+`CLAUDE.md` is expected.
 
 ## Running it
 
@@ -23,81 +36,44 @@ replaced with real composed sound.** Next is M3, the vertical slice.
 2. Let it re-save the project on first open.
 3. Run the project (or `godot .` from a terminal to see `print()` output).
 
-You start in a gray room with **nothing** — an empty note bar. Move a white
-square in eight directions (**WASD** or **arrows**; **Tab** swaps the movement
-layout *and* the palette together).
+You start in a dark, dynamically-lit cave (placeholder rock tileset) with
+**nothing** — an empty note bar. Move a near-white square in eight directions
+(**WASD** or **arrows**; **Tab** swaps the movement layout *and* the palette
+together). Your light grows as you collect notes.
 
-- **Collect notes.** Walk onto one of the three notes on the floor and press
-  **space** to pick it up — the note bar gains a swatch, coloured by the note's
-  category (C/D/E, one per category). **Space is the single world verb** (it will
-  also cover NPCs, hints and further doors later).
-- **Play in the overworld.** The palette sits under the resting hand: **H J K L ;**
-  in WASD mode, **A S D F G** in arrows mode. Each plays its note — a tone, an
-  expanding colour ring, a flash in the note bar. The dim "resonator" blocks light
-  when struck with the note they're tuned to.
-- **Open a door.** Walk to a door and press **space** to enter the instrument
-  state: movement suspends and a scrim fades over the still-running world. Play on
-  the home-row piano — **A S D F G H J K L ;** (white: C D E F G A B C D E) and
-  **W E T Y U O P** (black), with `R`/`I` unbound where a piano has no black key.
-  Only **owned** pitch classes sound; **[** / **]** shift octave. Play the door's
-  melody and it opens for good; a wrong note resets the gems with no penalty.
-  **Space** or **Esc** leaves the instrument state instantly.
+- **Collect notes.** Walk onto a floating diamond pickup and press **space** — the
+  note bar gains a swatch coloured by the note's category, and the pickup's light
+  folds into yours. **Space is the single world verb.**
+- **Play in the overworld.** The palette sits under the resting hand:
+  **H J K L ;** in WASD mode, **A S D F G** in arrows mode. Each plays its note —
+  a tone, an expanding colour ring, a spark, a flash in the note bar.
+- **Read a clue.** A struck **chime** (a hanging vertical bar, not a pickup) plays
+  a door's melody, pulsing each note's colour in order.
+- **Open a door.** Press **space** at a door to enter the instrument state:
+  movement suspends, a scrim and the home-row piano widget ease in over the
+  still-running world. Play **A S D F G H J K L ;** (white) and **W E T Y U O P**
+  (black), `R`/`I` unbound where a piano has no black key. Only **owned** pitch
+  classes sound; **[** / **]** shift octave. Play the door's melody and it unlocks
+  with a choreographed payoff (gems flaring, a shake, dust, the melody resolving);
+  a wrong note resets the gems with no penalty. **Space**/**Esc** exits instantly.
 
-The two doors are the 1-note `door_test_01` (top-left) and the 3-note ordered
-`door_test_02` (top-right); their gems show how many notes and their colours.
-
-Tests:
+## Tests
 
 ```
-godot --headless --script tests/test_melody_matcher.gd
+godot --headless --script tests/test_melody_matcher.gd            # 32 assertions
+godot --headless --script tests/test_instrument_keyboard_layout.gd # 21 assertions
+python3 scripts/validate_rooms.py                                 # reachability/solvability/ramp
 ```
 
-32 assertions, no engine state required. Exit code is non-zero on failure, so
-this drops straight into CI.
-
-## Layout
-
-```
-autoload/
-  input_config.gd     InputMap in code — movement, palette (mirrored to the hand),
-                      home-row piano and interact/octave actions; two layouts, rebindable
-  note_bus.gd         global signal bus: note_played + instrument_state_changed
-  melody_library.gd   loads data/melodies/*.json at boot, lookup by id
-  note_registry.gd    loads data/notes.json; id/midi -> {category, index}; colour resolution
-  note_inventory.gd   what the player owns, by pitch class + slots (started empty)
-  synth.gd            runtime AudioStreamGenerator synth, polyphonic
-  note_visuals.gd     spawns a colour ring per played note
-scripts/music/        (pure: no nodes, no signals, unit-tested)
-  note_names.gd       pitch name <-> MIDI <-> frequency
-  melody_matcher.gd   does this attempt satisfy this melody?
-  note_colors.gd      (category, index, octave) -> colour
-scenes/
-  main.tscn/.gd       entry point; spawns test resonators, pickups and doors
-  player/             8-direction movement, note input (two modes), the interact verb
-  rooms/test_room.*   gray box, built in code, deleted at M3
-  fx/note_ring.gd     expanding, fading ring
-  ui/note_bar.gd      the equipped-slot bar (grows as notes are collected)
-  ui/instrument_overlay.gd  scrim that fades over the world in the instrument state
-  objects/resonator.gd      block tuned to a palette slot; quiet in the instrument state
-  objects/interactable.gd   base: Area2D + interact()/can_interact() — the one world-verb seam
-  objects/note_pickup.gd    a collectible note (an Interactable)
-  objects/melody_lock.gd    played notes -> MelodyMatcher -> unlocked/progress/mismatch
-  objects/door.gd           a melody-locked door (Interactable composing a lock); structure gems
-data/
-  notes.json                the note registry (category/colour source of truth)
-  keyboard_layout.json      piano semitone map + per-layout palette keys
-  melodies/door_test_01.json  the 1-note first door
-  melodies/door_test_02.json  the 3-note ordered door
-tests/
-  test_melody_matcher.gd
-```
+The `.gd` suites need no engine state and exit non-zero on failure (CI-ready). The
+room validator is pure Python over the geometry data and never boots the engine.
 
 ## The one rule
 
 **No pitch, melody or musical pattern ever appears in a `.gd` file.** Code refers
 to melodies by id and to notes by id or palette slot; the pitches, the
-keyboard→pitch map and the note categories all live in `data/`. If you're typing
-a note name into a script, stop.
+keyboard→pitch map and the note categories all live in `data/`. `EnvPalette`
+extends the same rule to environment colour — no hex literal in a scene or script.
 
 To prove it still holds:
 
@@ -106,25 +82,67 @@ grep -rnE '"[A-G](#|b)?[0-9]"' --include=*.gd . \
   | grep -vE '^\./(tests|scripts/music/note_names)'
 ```
 
-Should return nothing. Two files are exempt: `tests/` needs literal notes to
-assert against, and `note_names.gd` mentions them in doc comments because
-converting them is its entire job. Anywhere else is a violation.
+Should return nothing. `tests/` and `note_names.gd` are the only exempt files.
+
+## Layout
+
+```
+autoload/
+  input_config.gd     InputMap in code — movement, palette (mirrored to the hand),
+                      home-row piano, interact/octave; two layouts, rebindable
+  note_bus.gd         global signal bus: note_played, instrument_state, melody_armed/
+                      progress, shake_requested
+  melody_library.gd   loads data/melodies/*.json at boot, lookup by id
+  note_registry.gd    loads data/notes.json; id/midi -> {category, index}
+  note_inventory.gd   what the player owns (pitch classes) + equipped slots
+  synth.gd            runtime AudioStreamGenerator synth, polyphonic (placeholder sine)
+  note_visuals.gd     spawns a colour ring per played note
+  room_graph.gd       loads data/rooms.json + per-room geometry; boot consistency check
+  world_state.gd      opened doors + taken pickups; survives room re-instancing
+  env_palette.gd      locked environment colours from data/palette.json (the one rule, colour)
+scripts/music/        (pure: no nodes, no signals, unit-tested)
+  note_names.gd       pitch name <-> MIDI <-> frequency
+  melody_matcher.gd   does this attempt satisfy this melody?
+  note_colors.gd      (category, index, octave) -> colour
+scenes/
+  main.tscn/.gd       render root: 960×540 SubViewport upscaled by a Display TextureRect
+  world.tscn/.gd      persistent gameplay host inside the viewport; room swap + camera clamp
+  player/             8-direction movement, note input, the interact verb, growing light
+  rooms/room.gd       builds a room from data; rock_tileset.gd is the placeholder tileset
+  fx/                 note_ring, lighting (additive PointLight2D factory),
+                      particle_burst, collect_flash
+  ui/                 note_bar, instrument_overlay, instrument_keyboard (+ melody strip)
+  objects/            interactable (the world-verb seam), resonator, note_pickup,
+                      melody_chime, melody_lock, door (+ door_gems)
+data/
+  notes.json          the note registry (category/colour source of truth)
+  palette.json        the locked environment palette
+  keyboard_layout.json  piano semitone map + per-layout palette keys
+  rooms.json + rooms/*.json   the room graph and per-room geometry (tile coordinates)
+  melodies/*.json     per-door melodies
+tests/                melody-matcher + keyboard-geometry suites
+scripts/              validate_rooms.py (+ one-off migration helpers)
+```
 
 ## What isn't in yet
 
-Note **behaviours** (categories are data only — nothing acts on them; that's
-M5), multiple rooms, backtracking, world clue delivery (chiming crystals, murals
-— M3), combat, art, story, menus, saves, a melody journal, and rhythm/timing
-matching. A known M3 prerequisite: the camera doesn't clamp to room bounds, so
-out-of-bounds void is visible.
+The **drawn art** (real cave tileset, Room A composed to final quality — deferred
+from M4), note **behaviours** (categories are data only; nothing acts on them),
+combat, story, menus, saves, a melody journal, rhythm/timing matching, and any
+post-processing (the pipeline is built to host bloom/vignette; none attached).
 
 ## Numbers worth arguing with
 
-- `Synth.master_gain` / `voice_gain` / `decay_tau` / `attack` — the feel and
-  level of the placeholder sound. The sound gets replaced with real composition.
+Most feel values are `@export`ed for tuning in the inspector or by editing the
+script default:
+
+- `Synth.master_gain` / `voice_gain` / `decay_tau` / `attack` — the placeholder
+  sound; replaced with real composition later.
 - `NoteColors.CATEGORY_ARC` — the hue arc each category owns.
-- `Player.max_speed` — 80 px/s. `acceleration_time` — 0.05s. Movement tuning is
-  deliberately deferred until there's a reason to move.
-- `Door` gem/slab params and `InstrumentOverlay.max_alpha` — the door and
-  instrument-state look, all placeholder.
-- `TestRoom.room_tiles` — 30×18 tiles at 16px, larger than one screen.
+- `Player.max_speed` (240 px/s at 960×540), `acceleration_time`,
+  `camera_follow_speed` — movement and camera feel.
+- `Door.unlock_*` — the unlock choreography (held beat, gem flare, shake, dust).
+- Object/UI sizes (`Door.slab_size`, `DoorGems.gem_radius`, `NoteBar.slot_size`,
+  `InstrumentKeyboard.white_size`, the fx radii) — all in 960×540 pixels.
+- Room tiles are 30px; a 32×18 room is exactly one 960×540 screen.
+```

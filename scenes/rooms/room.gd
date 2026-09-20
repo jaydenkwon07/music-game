@@ -61,6 +61,7 @@ func _ready() -> void:
 		return
 	_size = _to_v2i(geo.get("size_tiles", [0, 0]))
 	_build_tiles(geo.get("grid", []))
+	_build_props(geo.get("props", []))
 	_record_entries(geo.get("entries", {}), geo.get("links", []))
 	_build_links(geo.get("links", []))
 	_build_pickups(geo.get("pickups", []))
@@ -211,6 +212,18 @@ func _build_door(door_id: String, link_at: Vector2i, inward: Vector2i) -> void:
 		+ _opening_offset(inward)
 	)
 	add_child(door)
+
+
+## Decorative detail props (§9-detail, M5 Step 5e): rubble piles, capped at a handful. No
+## collision or light — placed on floor cells for look only, so they never affect the frozen
+## geometry, the validator or the seal test. The cell seeds the deterministic shape.
+func _build_props(props: Array) -> void:
+	for prop_def in props:
+		var prop := Prop.new()
+		var cell := _to_v2i(prop_def.get("at", [0, 0]))
+		prop.seed_xy = cell
+		prop.position = _cell_center(cell)
+		add_child(prop)
 
 
 func _build_pickups(pickups: Array) -> void:

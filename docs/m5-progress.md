@@ -15,10 +15,11 @@ godot --headless --script tests/test_melody_matcher.gd          # 32
 godot --headless --script tests/test_instrument_keyboard_layout.gd  # 21
 godot --headless --script tests/test_rock_bevel.gd             # 23  (76 total)
 python3 scripts/validate_rooms.py
+python3 scripts/seal_test.py
 grep -rnE '"[A-G](#|b)?[0-9]"' --include=*.gd . | grep -vE '^\./(tests|scripts/music/note_names)'
 ```
 
-All green as of Step 3d (2026-09-19).
+All green as of Step 5a (2026-09-19).
 
 ---
 
@@ -175,6 +176,18 @@ and a 7-row east straight) — the scrolling camera never frames a wall end-to-e
 geometry is now LOCKED** — everything from 5a assumes it, and any edit must preserve the
 openings, door footprints (N cols 23–24 / E cols 45–46 / S cols 32–35), clearances, both
 stubs and rock near 30%. Validator green.
+
+**5a — door placement fix (built).** `DOOR_INSET` 4 → **1.5** (now a float; computed in
+world units off the link cell so the leaf centres between the footprint's two tiles):
+both doors land centred in their reserved footprints (N (720,60), E (1380,420)) instead
+of a tile past them in the clearance band. Doored-link entries land **room-side of the
+slab** via a new `DOOR_ENTRY_INSET` (3.5) — the plain 1-tile landing dropped the player
+inside the now-forward leaf; they now arrive on floor at `from_d` row 4 / `from_b` col 44,
+clear of the slab and of the future door art (5b). The seal flood-fill is now a committed
+script, **`scripts/seal_test.py`** (fine-grid, 72×90 slab vs 30×30 player, 8-connected):
+each door **closed → edge trigger sealed, open → reachable**. The 72×90 blocker overlaps
+the neck walls, so it seals and the 2c bevel opens no bypass at the door; the bevel's
+diagonal-squeeze risk elsewhere stays an M7 whole-map concern. Clearances now empty.
 
 - **Step 2 generates rather than loads** the atlas (owner, 2026-09-19) — keeps the
   palette retint.

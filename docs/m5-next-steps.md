@@ -133,7 +133,15 @@ unchanged (spec §8 permits it). Skip if 2c and 4b are enough. The ladder puts
 overhangs in M9, so doing it here pulls one room's share forward — **owner's call**,
 recorded in the progress doc either way.
 
-### 5a — Door placement fix
+### 5a — Door placement fix — DONE (2026-09-19)
+
+`DOOR_INSET` 4 → **1.5** (float; lands both leaves centred in their footprints, verified
+N (720,60) / E (1380,420)). Doored-link entries now land room-side of the slab via a new
+`DOOR_ENTRY_INSET` (3.5), not in the doorway (`from_d`→row 4, `from_b`→col 44, both floor).
+The seal test is now a committed script, **`scripts/seal_test.py`** (fine-grid flood-fill,
+72×90 slab vs 30×30 player): each door closed → sealed, open → reachable. Blocker size
+(72×90) re-checked — it overlaps the neck walls, so it seals and 2c bevels open no bypass
+at the door. Clearances now empty. Gate met.
 
 - Move the placeholder doors into the reserved footprints: N leaf rows 1–2 (cols
   23–24), E leaf cols 45–46 (rows 13–14).
@@ -271,6 +279,7 @@ godot --headless --script tests/test_melody_matcher.gd              # 32
 godot --headless --script tests/test_instrument_keyboard_layout.gd  # 21
 godot --headless --script tests/test_rock_bevel.gd                  # 23  (76 total)
 python3 scripts/validate_rooms.py
+python3 scripts/seal_test.py                                        # doors seal (5a)
 grep -rnE '"[A-G](#|b)?[0-9]"' --include=*.gd . | grep -vE '^\./(tests|scripts/music/note_names)'
 ```
 

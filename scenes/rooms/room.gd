@@ -23,11 +23,13 @@ signal transition_requested(to_room: String, to_entry: String)
 ## .tres to retune floor/rock value gap, seam and grit without touching code.
 @export var rock_style: RockStyle
 
-## Tiles inside from a gated link its door sits, so the instrument state is never
-## entered flush against a room edge where a camera push-in has nowhere to go
-## (§6.4, design doc §3.7). 4 tiles at 640×360 is the M4 double of M3's 2 (§4.2):
-## the room doubled in world units, so the proportional inset doubles with it.
-const DOOR_INSET := 4
+## Tiles inside from a gated link its door sits (§6.4, design doc §3.7). M5 Step 5a:
+## dropped 4 → 1.5 so the leaf lands centred in its RESERVED FOOTPRINT (the mask's
+## two-tile door slot, e.g. N cols 23–24 rows 1–2), not a tile past it in the
+## approach-clearance band. 1.5 is the distance from the link tile's centre to the
+## footprint centre and is the same on both edges, so one inset serves both. Float,
+## so the door centres between the footprint's two tiles rather than on a grid line.
+const DOOR_INSET := 1.5
 
 ## Undertale-style transitions (owner call, Session 3): the player walks to the
 ## very edge of the room and appears at the OPPOSITE edge of the next room. The
@@ -35,6 +37,11 @@ const DOOR_INSET := 4
 ## end, not a tile early), and a transition entry lands ENTRY_INSET tiles inside
 ## the destination's matching edge — the mirror of the edge just left.
 const ENTRY_INSET := 1
+## Where a DOORED link's entry lands (5a). The door leaf now sits at DOOR_INSET in its
+## footprint, so the plain 1-tile landing would drop the player inside the leaf's slab
+## (and, at 5b, on the door art). This clears the 72×90 slab and puts them room-side of
+## the open door they just came through. Sized to the slab; revisit if slab_size changes.
+const DOOR_ENTRY_INSET := 3.5
 const EDGE_TRIGGER_THICKNESS := 24.0
 
 # Tile size for the placeholder TileSet. 30px makes a 32×18 room exactly 960×540,
@@ -130,7 +137,13 @@ func _record_entries(entries: Dictionary, links: Array) -> void:
 			if not link.is_empty():
 				var at := _to_v2i(link.get("at", [0, 0]))
 				var inward := _inward(at)
-				_entries[str(entry_id)] = _cell_center(at + inward * ENTRY_INSET) + _opening_offset(inward)
+				# A doored link lands the player room-side of the leaf, not in it (5a).
+				var inset := DOOR_ENTRY_INSET if not str(link.get("door", "")).is_empty() else float(ENTRY_INSET)
+				_entries[str(entry_id)] = (
+					_cell_center(at)
+					+ Vector2(inward) * (inset * float(_tile_px))
+					+ _opening_offset(inward)
+				)
 				continue
 		_entries[str(entry_id)] = _cell_center(cell)
 
@@ -184,11 +197,17 @@ func _edge_band_size(inward: Vector2i) -> Vector2:
 
 
 ## A gated link's door sits DOOR_INSET tiles inside from the link, blocking the
-## corridor to it (§6.4). "Inside" is whichever perimeter edge the link is on.
+## corridor to it (§6.4). "Inside" is whichever perimeter edge the link is on. The
+## inset is fractional (5a), so the offset is computed in world units off the link
+## cell's centre rather than by integer tile arithmetic.
 func _build_door(door_id: String, link_at: Vector2i, inward: Vector2i) -> void:
 	var door := Door.new()
 	door.melody_id = door_id
-	door.position = _cell_center(link_at + inward * DOOR_INSET) + _opening_offset(inward)
+	door.position = (
+		_cell_center(link_at)
+		+ Vector2(inward) * (DOOR_INSET * float(_tile_px))
+		+ _opening_offset(inward)
+	)
 	add_child(door)
 
 

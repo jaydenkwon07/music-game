@@ -201,7 +201,13 @@ See `docs/m5-progress.md`. Committed 046c3e1. Visual gate still owner's to confi
 **Done when:** the five-gem door is visible, the validator is green, and W reads as a
 gap.
 
-### 5d — Light composition and the opened-door landmark
+### 5d — Light composition and the opened-door landmark — DONE (2026-09-20)
+
+Built. Owner call: **no static lights** (objects only). Persistent warm-brass frame light per
+door (doors brightest; sealed door dimmer); opened door keeps gems lit + frame light, restored
+on re-instance. Band count 5, bloom off. Opened-door frame finished (two side jambs, floor
+through, nothing across the transition end). See `docs/m5-progress.md`. Committed 59060a0.
+
 
 The recipe is locked; placement is authoring.
 
@@ -215,7 +221,13 @@ The recipe is locked; placement is authoring.
 
 **Done when:** in a hub still, the eye goes to the doors first.
 
-### 5e — Detail (capped)
+### 5e — Detail (capped) — DONE (2026-09-20)
+
+Built. Owner cap: **very light, ≤5 pieces**. Three deterministic rubble piles via a new
+decorative `Prop` (no collision/light/interaction; spatial-hash shape; data-authored). Cracks
+were built then pulled at the owner's call ("small details come later"), code removed too. See
+`docs/m5-progress.md`. Committed c0a3f72.
+
 
 A small prop set: rubble, decals, floor detail. In a lit cave depth comes mostly from
 light, so stop early if the room already holds. No faces, machinery or creatures

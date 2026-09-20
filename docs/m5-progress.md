@@ -233,6 +233,26 @@ room's own floor shows through it as a passage, with a soft shadow under the lin
 The **closed** draw is byte-identical to the 5b sign-off; only the open branch changed. The
 sealed door never opens, so it is unaffected.
 
+**5d — light composition + the opened-door landmark (built).** Owner call (2026-09-20): **no
+static lights** beyond each object's own glow — the room stays dark, objects emit their own
+light, doors are the beacons. Each `Door` gained a persistent warm-brass **frame light**
+(`_add_frame_light`, energy 0.6) so the doors are the brightest things; the sealed S door keeps
+its dimmer version (0.22). An **opened door stays a landmark**: `DoorGems` now keeps every gem
+**lit** (energy + colour) when `_open` instead of going dark, and the frame light persists —
+restored on re-instance via `_open_immediately` → `set_open(true)`. Band count stayed 5, bloom
+off. Light energies are `@export` for feel. Also completed the opened-door look (originally a
+5b/5c cleanup): an open door is framed by just its two side jambs with floor flowing through —
+no wall-end beam or shadow line across the transition end (owner note). Closed doors unchanged.
+
+**5e — capped rubble detail (built).** Owner cap (2026-09-20): **very light, ≤5 pieces**. Three
+deterministic **rubble piles** (`room_a.json` `props`, cells `[8,20] [40,24] [22,28]`) via a new
+`Prop` (`scenes/objects/prop.gd`) — purely decorative (no collision, light or interaction), so
+the frozen geometry, validator and seal test are untouched; shape is a spatial hash of the cell
+(not RNG); props don't emit light, so the doors stay brightest and rubble emerges in the
+player's light. **Floor cracks were built then pulled** at the owner's call ("small details
+come later") — the crack code was removed too, leaving a rubble-only prop, to be re-added
+deliberately when the detail pass returns. Placements are first-pass, easily nudged in data.
+
 **Standing caveat — the M5 art is provisional.** Everything visual here — the tileset, the
 door frame / brass pipes / cap colour, the player figure, the socket treatment, the light
 energies and every colour choice — is a placeholder. It will be revisited and polished in
@@ -242,8 +262,12 @@ carry the Cistern to store-page quality, and any of it can change.
 
 ## Still open
 
-- **Step 5 — compose the Cistern:** 5d light composition + the opened-door landmark (gems
-  stay lit, frame light persists), 5e detail (capped). Owner-heavy. 5a/5b/5c built; the 5c
-  visual gate (door visible, W reads as a gap) and the opened-door look are the owner's to
-  confirm on `godot .`.
-- **Step 6 — run the §1 gate, record; capture the reference still; silhouette test.**
+- **Step 5 is fully built (5a–5e).** The remaining visual gates are the owner's to confirm on
+  `godot .`: the 5c door visible / W reads as a gap, 5d's eye-goes-to-the-doors + the
+  opened-door landmark, and 5e's rubble reading + silhouette test.
+- **Step 6 — run the §1 store-page gate, capture the reference still, run the silhouette test,
+  record; then trim CLAUDE.md and update the design doc.**
+- **Known debt:** `room.gd` is now **300 lines**, over the ~200 guideline (§10) — it was
+  already ~266 before 5c/5e added the content builders. Wants a follow-up split (extract the
+  `_build_*` content builders or the geometry helpers, the move that produced
+  `door_gems`/`door_art`). Not bundled into 5e; owner's call on timing.

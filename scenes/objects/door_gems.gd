@@ -26,15 +26,17 @@ var _progress: int = 0
 var _open: bool = false
 var _mismatch_flash: float = 0.0      # remaining mismatch-cue time, seconds
 var _slab_size: Vector2 = Vector2.ZERO
+var _facing: Vector2i = Vector2i(0, 1)  # room-facing direction; the bar sits on this side
 var _gem_lights: Array[PointLight2D] = []
 
 
-## Build the gem row for a melody's target MIDI, above a slab of the given size.
-## Call once, after adding this node to the door.
-func configure(targets: Array, slab_size: Vector2) -> void:
+## Build the gem row for a melody's target MIDI, on the ROOM-facing side of the slab (M5
+## Step 5b: N→below, E→left, from `facing`). Call once, after adding this node to the door.
+func configure(targets: Array, slab_size: Vector2, facing: Vector2i) -> void:
 	_targets = targets
 	_total = targets.size()
 	_slab_size = slab_size
+	_facing = facing
 	_build_gem_lights()
 	queue_redraw()
 
@@ -114,11 +116,10 @@ func _spacing() -> float:
 	return gem_radius * 2.0 + 6.0
 
 
-## Gem i's local position, shared by the drawn gem and its light so they align.
+## Gem i's local position, shared by the drawn gem and its light so they align. Laid out on
+## the room-facing side and along the opening via DoorLayout, so N and E orient correctly.
 func _gem_position(i: int) -> Vector2:
-	var spacing := _spacing()
-	var start_x := -_total * spacing * 0.5 + spacing * 0.5
-	return Vector2(start_x + i * spacing, -_slab_size.y * 0.5 - gem_margin)
+	return DoorLayout.gem_position(i, _total, _facing, _slab_size, gem_margin, _spacing())
 
 
 func _draw() -> void:

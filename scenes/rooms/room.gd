@@ -203,6 +203,7 @@ func _edge_band_size(inward: Vector2i) -> Vector2:
 func _build_door(door_id: String, link_at: Vector2i, inward: Vector2i) -> void:
 	var door := Door.new()
 	door.melody_id = door_id
+	door.facing = inward  # into the room (5b): drives the gem-bar and carved-art orientation
 	door.position = (
 		_cell_center(link_at)
 		+ Vector2(inward) * (DOOR_INSET * float(_tile_px))

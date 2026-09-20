@@ -15,6 +15,9 @@ extends Interactable
 @export var melody_id: String = ""
 ## Scaled with the world across migrations (now ×1.5 at the 640→960 step).
 @export var slab_size: Vector2 = Vector2(72.0, 90.0)
+## The direction into the room (room.gd's `inward`): N door → south (0,1), E door → west
+## (-1,0). Drives which side the gem bar and the carved art face (M5 Step 5b, via DoorLayout).
+@export var facing: Vector2i = Vector2i(0, 1)
 ## Unlock choreography, the loop's payoff (§9). All tunable by feel (§10): a held
 ## beat, gems flaring one at a time as each note re-sounds (an arpeggio resolving),
 ## a camera shake, and a dust burst.
@@ -32,6 +35,7 @@ const CATEGORY_REP_INDEX := 1
 
 var _lock: MelodyLock
 var _gems: DoorGems
+var _art: DoorArt
 var _targets: Array = []
 var _total: int = 0
 var _open: bool = false
@@ -54,9 +58,12 @@ func _ready() -> void:
 	_targets = _lock.target_midi()
 
 	_add_blocker()
+	_art = DoorArt.new()
+	add_child(_art)
+	_art.configure(facing, slab_size)
 	_gems = DoorGems.new()
 	add_child(_gems)
-	_gems.configure(_targets, slab_size)
+	_gems.configure(_targets, slab_size, facing)
 	NoteBus.instrument_state_changed.connect(_on_instrument_state_changed)
 
 	# Rooms are re-instanced on every transition (§6.3a); a door the player already
@@ -134,8 +141,8 @@ func _finalize_open() -> void:
 		_blocker.set_deferred("disabled", true)
 	WorldState.mark_door_open(melody_id)
 	_gems.set_open(true)
+	_art.set_open(true)
 	NoteBus.set_instrument_state(false)
-	queue_redraw()
 
 
 ## A puff of stone dust at the gem row as the door gives way (§9). Parented to the
@@ -144,7 +151,8 @@ func _spawn_dust() -> void:
 	var dust := ParticleBurst.burst(EnvPalette.color("rock_high"))
 	dust.count = unlock_dust_count
 	add_child(dust)
-	dust.position = Vector2(0.0, -slab_size.y * 0.5)
+	# At the room-facing edge (where the leaf meets the floor), oriented by facing (5b).
+	dust.position = DoorLayout.gem_row_center(facing, slab_size, 0.0)
 
 
 ## Start open with no instrument-state round trip — used when WorldState says this
@@ -154,7 +162,7 @@ func _open_immediately() -> void:
 	if _blocker != null:
 		_blocker.set_deferred("disabled", true)
 	_gems.set_open(true)
-	queue_redraw()
+	_art.set_open(true)
 
 
 func _add_blocker() -> void:
@@ -165,13 +173,3 @@ func _add_blocker() -> void:
 	_blocker.shape = shape
 	body.add_child(_blocker)
 	add_child(body)
-
-
-func _draw() -> void:
-	var rect := Rect2(-slab_size * 0.5, slab_size)
-	if _open:
-		# Hollow frame: the slab has swung away, leaving void the light can't reach.
-		draw_rect(rect, EnvPalette.color("rock_void"), false, 1.0)
-	else:
-		draw_rect(rect, EnvPalette.color("rock_deep"), true)
-		draw_rect(rect, EnvPalette.with_alpha("ink", 0.5), false, 1.0)

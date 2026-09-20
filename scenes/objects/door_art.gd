@@ -48,25 +48,39 @@ func _rect(a0: float, a1: float, d0: float, d1: float, col: Color) -> void:
 	]), col)
 
 
+# A frame stone: filled rock_mid with a 2px rock_high rim, so it reads as cut, not natural
+# rock. Drawn per piece (not one full slab) so the OPENING between the pieces stays unpainted.
+func _stone(a0: float, a1: float, d0: float, d1: float) -> void:
+	_rect(a0, a1, d0, d1, EnvPalette.color("rock_high"))                     # bright cut edge…
+	_rect(a0 + 2.0, a1 - 2.0, d0 + 2.0, d1 - 2.0, EnvPalette.color("rock_mid"))  # …face inset back
+
+
 func _draw() -> void:
 	var half_a := DoorLayout.across_extent(_facing, _slab) * 0.5
 	var half_d := DoorLayout.depth_extent(_facing, _slab) * 0.5
-
-	# Carved stone slab, with a lighter rim so it reads as cut, not natural rock.
-	_rect(-half_a, half_a, -half_d, half_d, EnvPalette.color("rock_mid"))
-	_rect(-half_a, half_a, -half_d, half_d, EnvPalette.color("rock_high"))  # rim…
-	_rect(-half_a + 2.0, half_a - 2.0, -half_d + 2.0, half_d - 2.0, EnvPalette.color("rock_mid"))  # …inset back
-
-	# The opening the leaf seals: inset by the jamb (sides) and lintel (wall end).
 	var oa := half_a - jamb_thickness
 	var wall_d := -half_d + lintel_thickness
 	if oa <= 0.0:
+		_rect(-half_a, half_a, -half_d, half_d, EnvPalette.color("rock_mid"))
 		return
-	_rect(-oa, oa, wall_d, half_d, EnvPalette.color("rock_void"))  # dark recess behind the pipes
-	if _open:
-		return  # leaf retracted — just the stone frame around a dark opening
 
-	# Brass organ pipes filling the opening, tops varied at the wall end.
+	if _open:
+		# Leaf retracted: draw the stone as a BORDER (two jambs + a lintel) and leave the opening
+		# unpainted, so the room's own floor shows straight through it — a passage, not the flat
+		# black fill a full slab left behind. A soft shadow just under the lintel keeps it reading
+		# as a doorway receding into the passage.
+		_stone(-half_a, -oa, -half_d, half_d)   # left jamb (full depth)
+		_stone(oa, half_a, -half_d, half_d)     # right jamb
+		_stone(-oa, oa, -half_d, wall_d)        # lintel at the wall end
+		_rect(-oa, oa, wall_d, wall_d + 5.0, EnvPalette.with_alpha("rock_void", 0.55))
+		return
+
+	# Closed: a carved stone slab (a lighter rim so it reads as cut, not natural rock)…
+	_rect(-half_a, half_a, -half_d, half_d, EnvPalette.color("rock_mid"))
+	_rect(-half_a, half_a, -half_d, half_d, EnvPalette.color("rock_high"))  # rim…
+	_rect(-half_a + 2.0, half_a - 2.0, -half_d + 2.0, half_d - 2.0, EnvPalette.color("rock_mid"))  # …inset back
+	# …with a dark recess behind the brass organ pipes that fill the opening.
+	_rect(-oa, oa, wall_d, half_d, EnvPalette.color("rock_void"))
 	var slot := (2.0 * oa) / float(maxi(pipe_count, 1))
 	for i in pipe_count:
 		var a0 := -oa + float(i) * slot + groove_width * 0.5

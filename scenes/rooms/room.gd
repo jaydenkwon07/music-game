@@ -65,6 +65,7 @@ func _ready() -> void:
 	_build_links(geo.get("links", []))
 	_build_pickups(geo.get("pickups", []))
 	_build_chimes(geo.get("chimes", []))
+	_build_sealed_doors(geo.get("sealed_doors", []))
 
 
 ## World-space extent, for the camera clamp (§6.2).
@@ -226,6 +227,25 @@ func _build_chimes(chimes: Array) -> void:
 		chime.melody_id = str(chime_def.get("melody_id", ""))
 		chime.position = _cell_center(_to_v2i(chime_def.get("at", [0, 0])))
 		add_child(chime)
+
+
+## Decorative sealed doors (§7.5, M5 Step 5c): unopenable five-note doors with no link,
+## melody or lock — the S exit of the Cistern, a promise the player can't yet keep. Placed
+## from a perimeter opening cell exactly like a real door (DOOR_INSET + opening_offset), and
+## facing inward, so it lands in the same reserved footprint and reads as the same family.
+func _build_sealed_doors(defs: Array) -> void:
+	for door_def in defs:
+		var at := _to_v2i(door_def.get("at", [0, 0]))
+		var inward := _inward(at)
+		var sealed := SealedDoor.new()
+		sealed.facing = inward
+		sealed.socket_count = int(door_def.get("sockets", 5))
+		sealed.position = (
+			_cell_center(at)
+			+ Vector2(inward) * (DOOR_INSET * float(_tile_px))
+			+ _opening_offset(inward)
+		)
+		add_child(sealed)
 
 
 func _on_link_transition(to_room: String, to_entry: String) -> void:

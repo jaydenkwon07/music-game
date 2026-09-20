@@ -89,14 +89,14 @@
     {
       "melody_id": "door_tutorial",
       "at": [
-        22,
-        12
+        38,
+        10
       ]
     },
     {
       "melody_id": "door_backtrack",
       "at": [
-        10,
+        27,
         6
       ]
     }

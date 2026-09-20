@@ -166,6 +166,16 @@ player in place, 960×540 is **not too tight** in the Cistern; the resolution ru
 in `world.gd` (walk lit vs. dark — it read fine lit *and* dark). Zoom stays parked
 (Q25). The debug toggle is kept for the 5d/M8 lighting work.
 
+**4b — chime placement + shape lock: SHAPE FROZEN (owner, 2026-09-19).** Chimes moved
+beside their doors in `data/rooms/room_a.json` (`door_tutorial [22,12] → [38,10]`,
+`door_backtrack [10,6] → [27,6]`); placeholders, owner may still nudge. Owner chose to
+**freeze the silhouette as-is** rather than break up the flats (the 33-tile bottom run
+and a 7-row east straight) — the scrolling camera never frames a wall end-to-end and
+5d/5e will dress them; rock stays **31.9%** (≈ the 30% line, accepted). **`room_a.json`
+geometry is now LOCKED** — everything from 5a assumes it, and any edit must preserve the
+openings, door footprints (N cols 23–24 / E cols 45–46 / S cols 32–35), clearances, both
+stubs and rock near 30%. Validator green.
+
 - **Step 2 generates rather than loads** the atlas (owner, 2026-09-19) — keeps the
   palette retint.
 - Banding shipped at **5 bands**, not the spec's suggested 3–4 start (owner tune).

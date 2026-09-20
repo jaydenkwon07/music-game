@@ -104,7 +104,14 @@ Is 960×540 too tight in the Cistern, now with real tiles and the final player?
 
 **Done when:** owner records "scale stays" or "reopen".
 
-### 4b — Chime placement and shape lock
+### 4b — Chime placement and shape lock — DONE (2026-09-19)
+
+Chimes moved beside their doors (`door_tutorial → [38,10]`, `door_backtrack → [27,6]`;
+placeholders, owner may nudge in-game). **Shape FROZEN as-is** (owner: freeze, don't break
+up the straights) — rock stays 31.9% (≈ the 30% line, accepted). **`data/rooms/room_a.json`
+geometry is now locked**; any later edit must keep the 2-tile openings, aprons, door
+footprints (N cols 23–24 / E cols 45–46 / S cols 32–35), clearances, both stubs (W gap rows
+26–27, S) and rock near 30%. Everything from 5a on assumes this.
 
 Data-only, after 2c so the shape is judged with real corners.
 

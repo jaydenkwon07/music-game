@@ -157,7 +157,13 @@ at the door. Clearances now empty. Gate met.
 
 **Done when:** seal test passes and both approach clearances are empty.
 
-### 5b — Door art
+### 5b — Door art — DONE (2026-09-20)
+
+Built and owner signed off. Carved stone jamb + lintel framing a brass organ-pipe leaf;
+orientation from the link edge via a new pure seam `door_layout.gd` (`DoorLayout`), so N
+and E draw through one path; gems on the room-facing side; M4 unlock choreography intact.
+`tests/test_door_layout.gd` (12). See `docs/m5-progress.md`. Committed 07b8804.
+
 
 The N and E doors as designed objects in their footprints: carved stone jambs, a
 lintel, warm brass, tensioned strings or pipes (design doc §4.7), gems in a bar on

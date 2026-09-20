@@ -13,13 +13,14 @@ Verification commands that must stay green (re-run every step):
 godot --headless --import
 godot --headless --script tests/test_melody_matcher.gd          # 32
 godot --headless --script tests/test_instrument_keyboard_layout.gd  # 21
-godot --headless --script tests/test_rock_bevel.gd             # 23  (76 total)
+godot --headless --script tests/test_rock_bevel.gd             # 23
+godot --headless --script tests/test_door_layout.gd            # 12  (88 total)
 python3 scripts/validate_rooms.py
 python3 scripts/seal_test.py
 grep -rnE '"[A-G](#|b)?[0-9]"' --include=*.gd . | grep -vE '^\./(tests|scripts/music/note_names)'
 ```
 
-All green as of Step 5a (2026-09-19).
+All green as of Step 5b (2026-09-20).
 
 ---
 
@@ -193,8 +194,26 @@ diagonal-squeeze risk elsewhere stays an M7 whole-map concern. Clearances now em
   palette retint.
 - Banding shipped at **5 bands**, not the spec's suggested 3–4 start (owner tune).
 
+**5b — door art (built, owner signed off 2026-09-20).** The N and E doors are now drawn
+objects in their footprints: a carved stone slab (a lighter `rock_high` rim so it reads
+as *cut*, not natural rock) with jamb + lintel framing a **brass organ-pipe** leaf
+(deterministic varied cap heights, never RNG), retracting to a dark framed opening when
+open. Orientation derives from the link's edge via a new **pure seam**,
+`scripts`-free `DoorLayout` (`door_layout.gd`): it owns the `(across, depth)` frame so N
+(faces south → gems/pipes below, horizontal) and E (faces west → gems/pipes left,
+vertical) draw through **one path** — `DoorArt` and `DoorGems` never branch on edge, and
+`room.gd` passes `door.facing = inward`. Unit-tested directly (`tests/test_door_layout.gd`,
+12 cases) where `DoorArt`/`DoorGems` can't be (they reference `EnvPalette`). Gems moved to
+the room-facing side; the M4 unlock choreography (flare/shake/dust) and `WorldState`
+persistence are unchanged. Colours by palette name (no magenta): stone from the rock ramp,
+`brass`/`copper` from `resonant`. **Owner note:** the pipe cap edge uses `copper` (#6B7F6A,
+a sage-green) — reads as verdigris/patina rather than a bright highlight, kept as-is.
+`door.gd` 175 / `door_gems.gd` 154 / `door_art.gd` 76 / `door_layout.gd` 34 — all under
+the line guideline. Committed 07b8804 (with 5a, dea8a91, which had not been pushed).
+
 ## Still open
 
-- **Step 5 — compose the Cistern:** door as art object (frames/gems/brass), the
-  five-gem act-2 door, light placement, `DOOR_INSET` fix. Owner-heavy.
+- **Step 5 — compose the Cistern:** 5c the five-gem act-2 door + the west gap, 5d light
+  composition + the opened-door landmark, 5e detail (capped). Owner-heavy; 5c needs the
+  sealed-door representation call (schema vs. decorative object). Door art (5b) done.
 - **Step 6 — run the §1 gate, record; capture the reference still; silhouette test.**

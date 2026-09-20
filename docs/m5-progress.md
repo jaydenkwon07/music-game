@@ -211,9 +211,39 @@ a sage-green) — reads as verdigris/patina rather than a bright highlight, kept
 `door.gd` 175 / `door_gems.gd` 154 / `door_art.gd` 76 / `door_layout.gd` 34 — all under
 the line guideline. Committed 07b8804 (with 5a, dea8a91, which had not been pushed).
 
+**5c — the five-gem S door + the west gap (built).** The Cistern's unopenable five-note S
+door is a **decorative object** (owner call, 2026-09-20: representation (b), no `MelodyLock`,
+melody or link — the schema-level sealed exit (a) waits for M7). New `SealedDoor`
+(`scenes/objects/sealed_door.gd`) reuses `DoorArt` for the carved-stone + brass-pipe leaf and
+`DoorLayout` for orientation, so it reads as the same family as the real doors; it shows
+**five unlit sockets** (owner call: count only, no category tint — drawn as empty stone
+recesses with a carved rim, committing to no pitch→category, §9) and blocks with a permanent
+`StaticBody2D` (nothing is behind it — the S corridor is a dead-end stub). Authored in data
+(`room_a.json` new `sealed_doors` array, `at [33,35]`) and placed by the **same** footprint
+math as a real door (`DOOR_INSET + opening_offset`, facing north). **No schema or validator
+change** — `validate_rooms.py` reads only the graph, `seal_test.py` only doored links, and
+`RoomGraph.geometry()` passes the new key straight through. The **west gap** needed no build:
+it stays the geometry-only floor stub, reading as a free passage. Its faint brass self-light
+is a placeholder for 5d.
+
+**Opened-door look fixed (`DoorArt`, 2026-09-20).** An open door used to paint the full stone
+slab then fill the opening with near-black `rock_void` — a flat black rectangle. It now draws
+the stone as a **border** (two jambs + a lintel) and leaves the opening unpainted, so the
+room's own floor shows through it as a passage, with a soft shadow under the lintel for depth.
+The **closed** draw is byte-identical to the 5b sign-off; only the open branch changed. The
+sealed door never opens, so it is unaffected.
+
+**Standing caveat — the M5 art is provisional.** Everything visual here — the tileset, the
+door frame / brass pipes / cap colour, the player figure, the socket treatment, the light
+energies and every colour choice — is a placeholder. It will be revisited and polished in
+later passes (M8 lighting, M9 detail, M10 doors-as-presentation, M13 audio) and by owner
+redirection. Nothing recorded above is a final visual commitment; the point of M5 is only to
+carry the Cistern to store-page quality, and any of it can change.
+
 ## Still open
 
-- **Step 5 — compose the Cistern:** 5c the five-gem act-2 door + the west gap, 5d light
-  composition + the opened-door landmark, 5e detail (capped). Owner-heavy; 5c needs the
-  sealed-door representation call (schema vs. decorative object). Door art (5b) done.
+- **Step 5 — compose the Cistern:** 5d light composition + the opened-door landmark (gems
+  stay lit, frame light persists), 5e detail (capped). Owner-heavy. 5a/5b/5c built; the 5c
+  visual gate (door visible, W reads as a gap) and the opened-door look are the owner's to
+  confirm on `godot .`.
 - **Step 6 — run the §1 gate, record; capture the reference still; silhouette test.**

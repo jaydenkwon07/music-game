@@ -178,7 +178,14 @@ the room-facing side.
 **Done when:** silhouette test passes, and at a distance a door reads as a barrier and
 an unmarked gap reads as a gap.
 
-### 5c — The five-gem door and the west gap
+### 5c — The five-gem door and the west gap — DONE (2026-09-20)
+
+Built. Owner calls: **decorative object (b)** (no MelodyLock/melody/link) and **five unlit
+sockets** (count only). New `SealedDoor` reusing `DoorArt`/`DoorLayout`; authored in
+`room_a.json` `sealed_doors`; no schema/validator change. West gap stays the floor stub.
+Also fixed the opened-door look (`DoorArt`: floor shows through the frame, not a black box).
+See `docs/m5-progress.md`. Committed 046c3e1. Visual gate still owner's to confirm.
+
 
 - **S:** the five-gem door in its footprint (cols 32–35, rows 33–34), unopenable, no
   chime anywhere in Act 1.

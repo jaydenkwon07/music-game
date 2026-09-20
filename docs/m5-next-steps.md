@@ -52,7 +52,11 @@ Tune `rock_tileset.gd` against the Cistern's actual lights, not in the dark.
 
 **Done when:** standing in the hub, floor and rock are distinguishable at a glance.
 
-### 2c — Silhouette: corners that read as slopes
+### 2c — Silhouette: corners that read as slopes — DONE (2026-09-19)
+
+Built and signed off. Bevel geometry in `scripts/rock/rock_bevel.gd`; collision + occluder
+follow the cut (supersedes §8's square-collision rule). See `docs/m5-progress.md`.
+
 
 Two earlier treatments failed: a half-tile chamfer (read as octagons) and a
 `rock_void` inner notch (read as chipped rock). **Small masses are the stress test**
@@ -70,7 +74,11 @@ Two earlier treatments failed: a half-tile chamfer (read as octagons) and a
 **Done when:** a screenshot of a shoulder no longer reads as a staircase, and the
 outcrops don't read as octagons.
 
-### 2d — Player and interactables at final scale
+### 2d — Player and interactables at final scale — DONE (2026-09-19)
+
+Player built as a procedural humanoid (static, 8-way facing); scale accepted. Character
+*concept* is a first pass, open to redirection. Pickup/chime left unchanged. See progress doc.
+
 
 The player sets the scale everything else is measured against. Draw the final
 player, then re-check the pickup diamond and chime bar at that scale. Method
@@ -79,7 +87,11 @@ player, then re-check the pickup diamond and chime bar at that scale. Method
 **Done when:** black-on-white silhouette test — player, pickup and chime are each
 identifiable by shape alone.
 
-### 3d — Scale and darkness check
+### 3d — Scale and darkness check — DONE: SCALE STAYS (2026-09-19)
+
+Owner walked the Cistern (backtick full-bright diagnostic in `world.gd`): 960×540 is not
+too tight; resolution ruling not reopened. Zoom stays parked.
+
 
 Is 960×540 too tight in the Cistern, now with real tiles and the final player?
 
@@ -228,7 +240,9 @@ delivered.
   unknown name returns magenta.
 - The one rule: no pitch, melody or pattern in a `.gd` file.
 - Floor variation is a spatial hash, never RNG.
-- Collision stays on the 30px grid; the drawn silhouette may overhang by up to a tile.
+- Collision follows the drawn silhouette: the corner bevel carves the collision polygon
+  and light occluder too (2c, supersedes the old square-collision rule). An overhang (4c)
+  may still draw rock *past* the collision edge by up to a tile.
 - Transitions stay edge-band: 2-tile openings, mirrored `from_*` entries.
 - Anything drawn passes the black-on-white silhouette test.
 - Say so when a `.tscn` is edited, so the tab can be closed and reopened.
@@ -247,7 +261,8 @@ change to the internal resolution, unless 3d reopens it.
 ```
 godot --headless --import
 godot --headless --script tests/test_melody_matcher.gd              # 32
-godot --headless --script tests/test_instrument_keyboard_layout.gd  # 21  (53 total)
+godot --headless --script tests/test_instrument_keyboard_layout.gd  # 21
+godot --headless --script tests/test_rock_bevel.gd                  # 23  (76 total)
 python3 scripts/validate_rooms.py
 grep -rnE '"[A-G](#|b)?[0-9]"' --include=*.gd . | grep -vE '^\./(tests|scripts/music/note_names)'
 ```

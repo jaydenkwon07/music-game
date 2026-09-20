@@ -18,7 +18,15 @@ extends RefCounted
 ## twice and go muddy. Tones and feel come from a RockStyle (M5 Step 2b): the floor
 ## reads LIGHTER than the rock body so the room is legible without the outline, with
 ## subtle facets and a distance-field contact seam (uniform on every exposed side, so
-## corners resolve without a per-corner case) — see RockStyle and _draw_rock.
+## the straight edges resolve without a per-corner case) — see RockStyle and _draw_rock.
+##
+## Corners are BEVELLED (M5 Step 2c): a convex (outer) or concave (inner) rock corner
+## is cut on a 45° line so a diagonal run of tiles reads as a slope, not a staircase.
+## The leg length is a RockStyle knob; the cut is derived per pixel from the same
+## rock/floor neighbourhood the terrain uses, so it needs no new atlas layout. The SAME
+## cut drives the collision polygon and the light occluder (RockBevel.tile_polygon), so
+## the slope is solid, not painted-on — this supersedes §8's square-collision rule,
+## which assumed a bevel the player could not feel.
 ##
 ## Atlas layout (tiles are `tile_px` square):
 ##   row 0        — floor: 3 speckle variants (cols 0-2) + 2 rare detail (cols 3-4)
@@ -41,8 +49,9 @@ const ROCK_COLS := 12
 # the seam tone and the feel NUMBERS live in RockStyle (@export, M5 Step 2b); these
 # are the sub-tones the flat texture is built from — a lighter fleck and a darker
 # crack around the body — and stay structural, not per-room tuning. The contact seam
-# itself is a distance field (§8a): uniform on every floor-facing side, so it outlines
-# corners with no per-corner case and no carved silhouette.
+# is a distance field (§8a): uniform on every floor-facing side, so straight edges
+# resolve with no per-corner case. Corners are then carved by a 45° bevel (Step 2c,
+# geometry in RockBevel), and the seam hugs that new diagonal edge too.
 const _ROCK_FLECK := "rock_shadow"   # a lighter fleck on the dark rock body
 const _ROCK_CRACK := "rock_void"     # a darker crack
 const _ROCK_GRAIN := "rock_mid"      # a rare bright grain
@@ -50,17 +59,18 @@ const _FLOOR_PIT := "rock_deep"      # a darker pit in the floor
 const _FLOOR_GRAIN := "rock_mid"     # a lighter grain
 const _FLOOR_INK := "rock_void"      # crack / pebble ink
 
-# Side bits for a blob config: which cardinal neighbours are rock.
-const S_TOP := 1
-const S_RIGHT := 2
-const S_BOTTOM := 4
-const S_LEFT := 8
-# Corner bits: which diagonal neighbours are rock. A corner is only ever set when
-# both its adjacent sides are (the constraint that reduces 256 combos to 47).
-const C_TR := 1
-const C_BR := 2
-const C_BL := 4
-const C_TL := 8
+# Neighbourhood bits for a blob config: which cardinal (S_*) and diagonal (C_*)
+# neighbours are rock. A corner is only ever set when both its adjacent sides are (the
+# constraint that reduces 256 combos to 47). RockBevel is the single source of these,
+# since it reads the same neighbourhood; aliasing keeps the two from drifting.
+const S_TOP := RockBevel.S_TOP
+const S_RIGHT := RockBevel.S_RIGHT
+const S_BOTTOM := RockBevel.S_BOTTOM
+const S_LEFT := RockBevel.S_LEFT
+const C_TR := RockBevel.C_TR
+const C_BR := RockBevel.C_BR
+const C_BL := RockBevel.C_BL
+const C_TL := RockBevel.C_TL
 
 
 ## Atlas coord for a floor tile. `variant` 0..2 are base speckles; 3-4 are detail.
@@ -118,11 +128,6 @@ static func build(tile_px: int, style: RockStyle = null) -> TileSet:
 	for v in FLOOR_COLS:
 		source.create_tile(Vector2i(v, FLOOR_ROW))
 
-	var half := float(tile_px) * 0.5
-	var square := PackedVector2Array([
-		Vector2(-half, -half), Vector2(half, -half),
-		Vector2(half, half), Vector2(-half, half),
-	])
 	var configs := _blob_configs()
 	for i in configs.size():
 		var sides: int = configs[i][0]
@@ -133,13 +138,17 @@ static func build(tile_px: int, style: RockStyle = null) -> TileSet:
 		td.terrain_set = TERRAIN_SET
 		td.terrain = ROCK_TERRAIN
 		_set_peering(td, sides, corners)
-		# Collision stays a full 30px square regardless of the drawn bevel (§8): it
-		# is impassable either way and the player can't tell.
-		td.set_collision_polygons_count(0, 1)
-		td.set_collision_polygon_points(0, 0, square)
-		var occ := OccluderPolygon2D.new()
-		occ.polygon = square
-		td.set_occluder(0, occ)
+		# Collision and the light occluder follow the drawn silhouette exactly — the
+		# same bevel that carves the pixels carves these (Step 2c). A player walking a
+		# sloped wall now meets the diagonal, not the old square jutting into floor. A
+		# corner cut to nothing leaves no polygon, so that tile gets no solid.
+		var poly := RockBevel.tile_polygon(sides, corners, tile_px, style.bevel_convex, style.bevel_concave)
+		if poly.size() >= 3:
+			td.set_collision_polygons_count(0, 1)
+			td.set_collision_polygon_points(0, 0, poly)
+			var occ := OccluderPolygon2D.new()
+			occ.polygon = poly
+			td.set_occluder(0, occ)
 
 	return tile_set
 
@@ -209,10 +218,10 @@ static func _draw_floor(img: Image, ox: int, oy: int, tp: int, variant: int, sty
 
 ## Rock blob tile. A flat body in the style's rock_tone (DARKER than the floor) with
 ## subtle low-contrast facets — a lighter fleck, a darker crack, a rare bright grain,
-## no directional gradient (the PointLights do the lighting, §8a). Then a
-## distance-field CONTACT SEAM in the style's seam_tone where the rock nears floor:
-## uniform on every floor-facing side, so it outlines corners with no per-corner case
-## and no carved silhouette.
+## no directional gradient (the PointLights do the lighting, §8a). Corners are then
+## CARVED by a 45° bevel (Step 2c) so a diagonal run reads as a slope, and a
+## distance-field CONTACT SEAM in the style's seam_tone hugs every floor-facing edge —
+## the straight sides (uniform, no per-corner case) and the new bevel diagonal alike.
 static func _draw_rock(img: Image, ox: int, oy: int, tp: int, sides: int, corners: int, index: int, style: RockStyle) -> void:
 	img.fill_rect(Rect2i(ox, oy, tp, tp), EnvPalette.color(style.rock_tone))
 	var rng := RandomNumberGenerator.new()
@@ -227,15 +236,36 @@ static func _draw_rock(img: Image, ox: int, oy: int, tp: int, sides: int, corner
 	for _i in 2:
 		img.set_pixel(ox + rng.randi_range(1, tp - 2), oy + rng.randi_range(1, tp - 2), grain)
 
-	var seam := EnvPalette.color(style.seam_tone)
-	if style.seam_px <= 0.0:
+	# The bevels active on this tile, as [corner_id, leg_px] (RockBevel owns the shape
+	# maths). Legs of 0 (the default for concave) are skipped, so a tile with no cuts
+	# and no seam draws nothing further.
+	var bevels := RockBevel.active(sides, corners, tp, style.bevel_convex, style.bevel_concave)
+	if bevels.is_empty() and style.seam_px <= 0.0:
 		return
+
+	var floor_col := EnvPalette.color(style.floor_tone)
+	var seam := EnvPalette.color(style.seam_tone)
 	for y in tp:
 		for x in tp:
+			# Nearest bevel line for this pixel: >0 px on the CUT side, else the rock-side
+			# distance to the diagonal, which the seam keys off.
+			var cut := false
+			var bevel_rock_dist := INF
+			for b in bevels:
+				var signed_px := RockBevel.corner_signed(x, y, tp, b[1], b[0])
+				if signed_px > 0.0:
+					cut = true
+					break
+				bevel_rock_dist = minf(bevel_rock_dist, -signed_px)
+			if cut:
+				img.set_pixel(ox + x, oy + y, floor_col)
+				continue
+			if style.seam_px <= 0.0:
+				continue
 			var gx := (float(x) + 0.5) / float(tp)
 			var gy := (float(y) + 0.5) / float(tp)
-			var dp := _dist_to_floor(gx, gy, sides, corners) * float(tp)
-			if dp < style.seam_px:
+			var edge_px := _dist_to_floor(gx, gy, sides, corners) * float(tp)
+			if minf(edge_px, bevel_rock_dist) < style.seam_px:
 				img.set_pixel(ox + x, oy + y, seam)
 
 

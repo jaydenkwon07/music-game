@@ -12,12 +12,13 @@ Verification commands that must stay green (re-run every step):
 ```
 godot --headless --import
 godot --headless --script tests/test_melody_matcher.gd          # 32
-godot --headless --script tests/test_instrument_keyboard_layout.gd  # 21  (53 total)
+godot --headless --script tests/test_instrument_keyboard_layout.gd  # 21
+godot --headless --script tests/test_rock_bevel.gd             # 23  (76 total)
 python3 scripts/validate_rooms.py
 grep -rnE '"[A-G](#|b)?[0-9]"' --include=*.gd . | grep -vE '^\./(tests|scripts/music/note_names)'
 ```
 
-All green as of Step 4.
+All green as of Step 3d (2026-09-19).
 
 ---
 
@@ -131,7 +132,39 @@ room id). `main.tscn` was edited back in Step 0.
 
 ---
 
-## Deviations from the spec, on the record
+## Post-Step-4 look pass (2026-09-19) — 2c, 2d, 3d
+
+Steps from `docs/m5-next-steps.md`, worked after Steps 0–4.
+
+**2c — corner bevels (built, owner signed off).** Rock corners are cut on a 45° line so
+a diagonal run reads as a slope, not a staircase. The geometry is a new pure seam,
+`scripts/rock/rock_bevel.gd` (`RockBevel`): convex/concave corner selection, the signed
+cut, and the tile silhouette polygon — no autoload reference, so it is unit-tested
+directly (`tests/test_rock_bevel.gd`, 23 cases) where `RockTileSet` can't be (it fails
+to compile under `--script` on the `EnvPalette` identifier). `rock_tileset.gd` draws the
+cut and seams the new diagonal; `RockStyle` gained `bevel_convex` (default 1.0) and
+`bevel_concave` (default 0.0, off — inner corners read as "chipped rock", judge shoulders
+first). **The collision polygon and the light occluder are driven by the same cut**
+(`RockBevel.tile_polygon`), so the slope is solid, not painted-on — this **supersedes
+§8's "collision stays a full square" rule**, which assumed a bevel the player couldn't
+feel; the first pass (visual-only cut, square collision) was rejected on exactly that.
+*Carry to 5a's seal test: beveled collision opens corner triangles, so a grid-only
+flood-fill won't see a diagonal squeeze between two diagonally-touching rock cells.*
+
+**2d — the player at final scale (built).** The placeholder square is now a procedural
+humanoid drawn in `player.gd` `_draw` — the only character silhouette (spec §8), ~27×15
+px (about a tile tall), static with 8-way facing from a head-lean plus eyes that hide
+when facing away. Owner calls: procedural (not sprites), static (no walk cycle). Six
+`@export` proportion knobs. `player.tscn` lost its `Body` ColorRect. Collision left at
+30×30 (the validated footprint); the figure is narrower, so it floats slightly off
+walls — an art-independent tightening left for later. Character *concept* (a generic
+small humanoid) is a first pass, open to redirection.
+
+**3d — scale/darkness check: SCALE STAYS (owner, 2026-09-19).** With the real tiles and
+player in place, 960×540 is **not too tight** in the Cistern; the resolution ruling
+(Q27) is **not reopened**. Judged on `godot .` with the backtick full-bright diagnostic
+in `world.gd` (walk lit vs. dark — it read fine lit *and* dark). Zoom stays parked
+(Q25). The debug toggle is kept for the 5d/M8 lighting work.
 
 - **Step 2 generates rather than loads** the atlas (owner, 2026-09-19) — keeps the
   palette retint.

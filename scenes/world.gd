@@ -14,6 +14,13 @@ extends Node2D
 
 var _current_room: Room = null
 
+## Debug lighting toggle: backtick flips the world CanvasModulate to full-bright so the
+## room can be walked fully lit. Added for the M5 3d scale/darkness check (verdict: scale
+## stays) and kept for the 5d/M8 lighting work — separating "too dark" from "too tight"
+## is the recurring question there. Debug-only; delete when the lighting is settled.
+var _modulate: CanvasModulate = null
+var _bright_test: bool = false
+
 # Camera shake (§9), driven by NoteBus.shake_requested: peak offset in pixels and
 # the remaining/total time, so the shake decays linearly to nothing.
 var _shake_strength: float = 0.0
@@ -37,6 +44,7 @@ func _ready() -> void:
 	dark.name = "WorldModulate"
 	dark.color = EnvPalette.color("cave_ambient")
 	add_child(dark)
+	_modulate = dark
 	NoteBus.shake_requested.connect(_on_shake_requested)
 	add_child(InstrumentOverlay.new())
 	var s := RoomGraph.start()
@@ -119,20 +127,27 @@ func _update_shake(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_update_shake(delta)
-	debug_label.text = "%d x %d   layout: %s   room: %s" % [
+	debug_label.text = "%d x %d   layout: %s   room: %s%s" % [
 		get_viewport_rect().size.x,
 		get_viewport_rect().size.y,
 		InputConfig.Layout.keys()[InputConfig.current_layout],
 		_current_room.room_id if _current_room != null else "-",
+		"   [LIGHT TEST]" if _bright_test else "",
 	]
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
 	# Tab swaps movement layout. Temporary, until there is a settings menu.
-	if event is InputEventKey and event.pressed and event.keycode == KEY_TAB:
+	if event.keycode == KEY_TAB:
 		var next := (
 			InputConfig.Layout.ARROWS
 			if InputConfig.current_layout == InputConfig.Layout.WASD
 			else InputConfig.Layout.WASD
 		)
 		InputConfig.apply_layout(next)
+	# Backtick: the 3d darkness diagnostic. Full-bright vs. the tuned cave ambient.
+	elif event.keycode == KEY_QUOTELEFT and _modulate != null:
+		_bright_test = not _bright_test
+		_modulate.color = Color.WHITE if _bright_test else EnvPalette.color("cave_ambient")

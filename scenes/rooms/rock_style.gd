@@ -25,3 +25,17 @@ extends Resource
 ## Facet grit density per tile (flat value variation, not a light gradient).
 @export_range(0, 16) var rock_facet_count: int = 5
 @export_range(0, 16) var floor_pit_count: int = 6
+
+## Corner bevels (M5 Step 2c): the leg length of the 45° cut at a rock corner, as a
+## fraction of a cell. Equal legs, so the cut is always 45°, and at a full cell (1.0)
+## consecutive convex corners join into one straight diagonal — the fix for the dome
+## shoulders reading as staircases. Collision and the light occluder follow the same
+## cut, so the slope is solid, not painted-on. A lone outcrop with four active corners
+## becomes an octagon (partial) or a diamond (full) — that is the outcrop stress test,
+## judged on `godot .`.
+##
+## Convex = outer corners (the shoulders); judge these first. Concave = inner corners,
+## which a prior notch treatment turned to "chipped rock" (2c) — it defaults OFF so the
+## shoulder judgment is not contaminated; raise it to try inner rounding.
+@export_range(0.0, 1.0, 0.05) var bevel_convex: float = 1.0
+@export_range(0.0, 1.0, 0.05) var bevel_concave: float = 0.0

@@ -55,7 +55,9 @@ func mismatch() -> void:
 	queue_redraw()
 
 
-## The door opened: gems go dark and stop drawing (the open visual takes over).
+## The door opened: every gem stays LIT and keeps drawing — an opened door is a landmark (5d),
+## not a dark hole. Together with the door's persistent brass frame light, the solved door
+## remains one of the brightest things in the room, restored whenever the room re-instances.
 func set_open(open: bool) -> void:
 	_open = open
 	_update_gem_lights()
@@ -102,7 +104,7 @@ func _update_gem_lights() -> void:
 	for i in _gem_lights.size():
 		var energy := gem_light_energy
 		if _open:
-			energy = 0.0
+			energy = gem_light_lit_energy   # opened door: all gems stay lit — a landmark (5d)
 		elif flashing:
 			energy = gem_light_energy * 0.4
 		elif i < _progress:
@@ -123,13 +125,15 @@ func _gem_position(i: int) -> Vector2:
 
 
 func _draw() -> void:
-	if _total <= 0 or _open:
+	if _total <= 0:
 		return
 	var flashing := _mismatch_flash > 0.0
 	for i in _total:
 		var base := _gem_category_color(int(_targets[i]) if i < _targets.size() else -1)
 		var col: Color
-		if flashing:
+		if _open:
+			col = base                      # opened door: every gem lit — a landmark (5d)
+		elif flashing:
 			# Soft "no": the whole row falls to a dull desaturated stone grey briefly.
 			col = base.darkened(0.6).lerp(EnvPalette.color("rock_high"), 0.7)
 		elif i < _progress:

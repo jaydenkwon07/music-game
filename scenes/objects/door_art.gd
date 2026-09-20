@@ -65,14 +65,11 @@ func _draw() -> void:
 		return
 
 	if _open:
-		# Leaf retracted: draw the stone as a BORDER (two jambs + a lintel) and leave the opening
-		# unpainted, so the room's own floor shows straight through it — a passage, not the flat
-		# black fill a full slab left behind. A soft shadow just under the lintel keeps it reading
-		# as a doorway receding into the passage.
-		_stone(-half_a, -oa, -half_d, half_d)   # left jamb (full depth)
-		_stone(oa, half_a, -half_d, half_d)     # right jamb
-		_stone(-oa, oa, -half_d, wall_d)        # lintel at the wall end
-		_rect(-oa, oa, wall_d, wall_d + 5.0, EnvPalette.with_alpha("rock_void", 0.55))
+		# Leaf retracted: just the two side jambs frame the passage and the opening is left
+		# unpainted, so the room's own floor flows straight through it — a clean walk-through,
+		# with nothing (no wall-end beam, no shadow line) across the far end by the transition.
+		_stone(-half_a, -oa, -half_d, half_d)   # jamb, one side of the opening
+		_stone(oa, half_a, -half_d, half_d)     # jamb, the other side
 		return
 
 	# Closed: a carved stone slab (a lighter rim so it reads as cut, not natural rock)…

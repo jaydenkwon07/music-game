@@ -27,6 +27,13 @@ extends Interactable
 @export var unlock_shake_time: float = 0.35
 @export var unlock_dust_count: int = 16
 
+## The door's warm-brass frame glow (5d): a persistent light centred on the leaf, so a door is
+## one of the brightest things in the dark room (§5.4 — "the eye goes to the doors first") and,
+## once open, stays a landmark. Always on, closed or open. Tunable by feel (§10); a sealed door
+## carries its own dimmer version.
+@export var frame_light_radius: float = 80.0
+@export var frame_light_energy: float = 0.6
+
 ## Gems show a note's CATEGORY, not the note itself (D-M3-3): every gem in a
 ## category uses this one representative index within the category's hue arc. Lives
 ## here (not on DoorGems) because the keyboard's melody strip references it too, so
@@ -58,6 +65,7 @@ func _ready() -> void:
 	_targets = _lock.target_midi()
 
 	_add_blocker()
+	_add_frame_light()
 	_art = DoorArt.new()
 	add_child(_art)
 	_art.configure(facing, slab_size)
@@ -163,6 +171,14 @@ func _open_immediately() -> void:
 		_blocker.set_deferred("disabled", true)
 	_gems.set_open(true)
 	_art.set_open(true)
+
+
+## A persistent warm-brass wash centred on the door (5d): the doors are the brightest things in
+## the room, closed or open. The gems' own coloured lights add category hue on top; an opened
+## door keeps this glow as a landmark. Drawn first so it sits under the leaf and gems.
+func _add_frame_light() -> void:
+	var light := Lighting.make_light(frame_light_radius, frame_light_energy, EnvPalette.color("brass"), false)
+	add_child(light)
 
 
 func _add_blocker() -> void:

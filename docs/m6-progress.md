@@ -125,6 +125,46 @@ passes (graph↔geometry links/entries mirror). **Owner still to confirm on `god
 at the M5 bar, and **vertical camera jitter at the top/bottom edges** (first exactly-one-screen-tall
 room). Geometry is frozen only after that sign-off (Part 3).
 
+## Step 5 — Light and detail (2026-09-21)
+
+Owner rulings for this room (§13.6, §13.7): **dim traversal shelf**, **rubble cap ≤6**, and a
+**one-off throwaway capture script** (no F2 key re-added to the shipped input path).
+
+**Light — the finding the spec predicted (§9).** The Gallery has no doors and no chimes, so
+under M5's ruling (no static lights; every object emits its own glow; doors are the beacons)
+it has **nothing to place** in the light pass — its only emitters across three screens are the
+`n_mend` pickup (left third) and the player's travelling light. Cost ≈ zero, as §9 anticipated.
+The consequence is real and **owner-accepted**: the Gallery is intentionally the **dim shelf**
+between lit hubs, a pacing contrast to the Cistern. This was the §9 stop-and-ask (a doorless
+room can't be given a beacon without inventing vocabulary, which §2.5 forbids) — resolved as
+"accept the dim read," not "add a light." If M7 later puts a real door on this room, it brings
+its own beacon then.
+
+**Detail — rubble.** Added a `props` array to `data/rooms/room_b.json`: **5 rubble piles**
+(cap ≤6) at `[9,12] [26,6] [45,12] [66,8] [88,6]`, ~1–2 per screen, all on floor and clear of
+the W apron, the S apron, the outcrops and the pickup. Deterministic `Prop` shapes (no
+collision/light), so the frozen geometry, validator and seal test are untouched. Cracks/finer
+detail stay deferred to M9 (spec default). `lint_rooms room_b` confirms every prop cell is
+on-floor and unreserved.
+
+**Silhouette test — passes by construction.** The Gallery's only objects are the pickup
+(bright diamond) and rubble (low dark lumps), an already-established-distinct pair (D-M4-7;
+`prop.gd`'s documented pass), plus the player. No new object type was introduced, so
+black-on-white distinguishability is unchanged from M5.
+
+**Reference stills** captured at internal res (960×540, no vignette — same nature as
+`cistern-final.png`), stitched into 2880×540 three-screen composites via a throwaway
+`_capture_gallery.tscn` (deleted after use; capture must run windowed, headless renders blank):
+- `docs/m6-reference/gallery-final.png` — the as-played dim view (the quality-bar still).
+- `docs/m6-reference/gallery-lit.png` — a full-bright companion so the layout/rubble read
+  without the darkness.
+
+**Verify (all green):** import · 104 tests · 12 lint fixtures · `validate_rooms` ·
+`seal_test` · `lint_rooms room_b` (rock warning only) · one-rule grep clean.
+
+**Owner gate still open (§1/§10):** the M5-bar judgment of the Gallery beside
+`cistern-final.png`, made live on `godot .`. Step 5 is complete pending that sign-off.
+
 ## Progress log
 
 - **2026-09-20** — Step 0a built (tlog). M6 re-scoped: measurement dropped, pipeline + Gallery
@@ -138,3 +178,6 @@ room). Geometry is frozen only after that sign-off (Part 3).
 - **2026-09-21** — owner signed off the shape; Part 3 done — geometry **FROZEN/LOCKED**, content
   unmoved, no doors (seal test N/A), verify re-run green. Next Gallery step is light + detail
   (Step 5), a separate owner-directed task.
+- **2026-09-21** — Step 5 done (pending owner sign-off): light pass is a no-op (dim traversal
+  shelf, the §9 finding, owner-accepted); 5 rubble props added (cap ≤6); silhouette passes;
+  `gallery-final.png` + `gallery-lit.png` captured. Verify green. Gate: owner judges on `godot .`.

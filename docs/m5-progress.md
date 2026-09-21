@@ -1,8 +1,9 @@
 # M5 — The cave look · Progress
 
-**Status: IN PROGRESS.** Steps 0–4 built and verified; Steps 5 (compose the
-Cistern) and 6 (run the §1 gate, record) still open — the store-page gate inherited
-from M4 is **not yet met**.
+**Status: COMPLETE (2026-09-20).** All steps (0–6) built and verified; the §1
+store-page gate is **MET** (owner's judgment on `godot .`, 2026-09-20). M5's
+reference still is `docs/m5-reference/cistern-final.png` — the quality bar every
+later room is measured against.
 **Spec:** `docs/m5-spec.md`. **Gate:** §1 — *a still of the finished room is
 something you would put on a store page* (owner's judgment on `godot .`, not a
 headless check).
@@ -20,7 +21,7 @@ python3 scripts/seal_test.py
 grep -rnE '"[A-G](#|b)?[0-9]"' --include=*.gd . | grep -vE '^\./(tests|scripts/music/note_names)'
 ```
 
-All green as of Step 5b (2026-09-20).
+All green as of Step 6 (2026-09-20).
 
 ---
 
@@ -260,14 +261,33 @@ later passes (M8 lighting, M9 detail, M10 doors-as-presentation, M13 audio) and 
 redirection. Nothing recorded above is a final visual commitment; the point of M5 is only to
 carry the Cistern to store-page quality, and any of it can change.
 
-## Still open
+## Step 6 — the store-page gate, met
 
-- **Step 5 is fully built (5a–5e).** The remaining visual gates are the owner's to confirm on
-  `godot .`: the 5c door visible / W reads as a gap, 5d's eye-goes-to-the-doors + the
-  opened-door landmark, and 5e's rubble reading + silhouette test.
-- **Step 6 — run the §1 store-page gate, capture the reference still, run the silhouette test,
-  record; then trim CLAUDE.md and update the design doc.**
-- **Known debt:** `room.gd` is now **300 lines**, over the ~200 guideline (§10) — it was
-  already ~266 before 5c/5e added the content builders. Wants a follow-up split (extract the
-  `_build_*` content builders or the geometry helpers, the move that produced
-  `door_gems`/`door_art`). Not bundled into 5e; owner's call on timing.
+**6a — captured and judged (2026-09-20).** A temporary F2 capture key in `world.gd` saved
+internal-res (960×540, no vignette) stills to `docs/m5-reference/`. The owner captured the hub
+and per-door views; the best hub shot is kept as **`cistern-final.png`** (the reference still),
+the rest deleted. **Silhouette check passed** — door (framed slab + pipes), sealed-door
+socket-row, pickup diamond, chime T-bar, player humanoid and rubble blob are each
+distinguishable by shape. The doors read as the brightest beacons; an opened door reads as a
+clean lit landmark. **The one soft spot is the rubble** (reads as dark geometric shapes rather
+than clearly rubble) — owner call "details later", left as-is, its polish deferred to M9.
+**§1 judged MET.** The F2 capture key was removed on close (debug-only); the backtick
+full-bright toggle stays for M8.
+
+**6b — stranger test:** owner's to run at their discretion; not blocking the close.
+
+**6c — recorded.** This doc finalised; `CLAUDE.md` §2 trimmed and §4 architecture entries
+updated (`rock_tileset` kept generating, new `door_art`/`door_layout`/`sealed_door`/`prop`,
+`rock_bevel`, door frame light + landmark); `README.md` updated; `docs/m5-next-steps.md`
+deleted.
+
+**Hours per step — NOT captured.** The ladder wants a measured hours-per-step number to
+calibrate M6's hours-per-room gate. This session did not instrument wall-clock time per step,
+so there is no honest number to record here. **If the owner tracked time, fill it in;** M6's
+estimate should not lean on a fabricated figure.
+
+## Carried debt (into M6)
+
+- **`room.gd` is ~300 lines**, over the ~200 guideline (§10) — already ~266 before 5c/5e added
+  the content builders. Wants a split (extract the `_build_*` content builders or the geometry
+  helpers, the move that produced `door_gems`/`door_art`). Owner's call on timing.

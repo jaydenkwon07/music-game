@@ -11,24 +11,25 @@ Design Logs). The working agreement is `CLAUDE.md`; per-milestone records are in
 
 ## State
 
-**M0–M4 built.** M0 movement + data seam; M1 the note toy; M2 one data-driven
+**M0–M5 built.** M0 movement + data seam; M1 the note toy; M2 one data-driven
 door; M3 the vertical slice (four rooms, real transitions, persistent doors,
-clue chimes, room-clamped camera, instrument-state keyboard widget); **M4 the
-technical visual foundation.**
+clue chimes, room-clamped camera, instrument-state keyboard widget); M4 the
+technical visual foundation; **M5 the cave look.**
 
-**M4 is closed as a *code* milestone** (2026-09-18): the fixed-resolution render
-pipeline, a data-driven environment palette (`EnvPalette`), dynamic lighting,
-distinct object silhouettes, and a full motion / game-feel pass including the
-door-unlock payoff. Its **drawn-art steps — the real cave tileset and Room A
-composed to store-page quality — were consciously deferred** to a future
-milestone; the tileset is still a procedural placeholder, so M4's store-page gate
-is *not* claimed met. Record: `docs/m4-progress.md`.
+**M5 is complete (2026-09-20) — the store-page gate is MET.** The **Cistern**
+(`room_a`, 48×36, the first scrolling room) is composed to store-page quality: a
+procedural rock tileset on a 47-tile blob terrain with bevelled corners, banded
+light + a vignette, doors as designed art objects (carved stone + brass organ
+pipes + category gems, the brightest beacons; an opened door stays a lit
+landmark), a decorative five-socket sealed door, and a light rubble detail pass.
+The reference still is `docs/m5-reference/cistern-final.png`. Record:
+`docs/m5-progress.md`.
 
 Open gates carried forward: **M3's play-through gate** (a stranger gets the loop
-in 5–10 min) is runnable but not yet run; **M1's aesthetic gate** ("does playing
-feel good on its own") stays deferred until the placeholder sine is replaced with
-real composed sound. **The roadmap beyond M4 is being re-planned** — a new spec /
-`CLAUDE.md` is expected.
+in 5–10 min) is **waived** to M7's stronger version (2026-09-18); **M1's aesthetic
+gate** ("does playing feel good on its own") stays deferred until the placeholder
+sine is replaced with real composed sound. **Next is M6** — authoring pipeline +
+room two, gated on a measured hours-per-room number.
 
 ## Running it
 
@@ -36,10 +37,10 @@ real composed sound. **The roadmap beyond M4 is being re-planned** — a new spe
 2. Let it re-save the project on first open.
 3. Run the project (or `godot .` from a terminal to see `print()` output).
 
-You start in a dark, dynamically-lit cave (placeholder rock tileset) with
-**nothing** — an empty note bar. Move a near-white square in eight directions
-(**WASD** or **arrows**; **Tab** swaps the movement layout *and* the palette
-together). Your light grows as you collect notes.
+You start in a dark, dynamically-lit cave (the Cistern) with **nothing** — an
+empty note bar. Move a small figure in eight directions (**WASD** or **arrows**;
+**Tab** swaps the movement layout *and* the palette together). Your light grows
+as you collect notes.
 
 - **Collect notes.** Walk onto a floating diamond pickup and press **space** — the
   note bar gains a swatch coloured by the note's category, and the pickup's light
@@ -126,10 +127,11 @@ scripts/              validate_rooms.py (+ one-off migration helpers)
 
 ## What isn't in yet
 
-The **drawn art** (real cave tileset, Room A composed to final quality — deferred
-from M4), note **behaviours** (categories are data only; nothing acts on them),
-combat, story, menus, saves, a melody journal, rhythm/timing matching, and any
-post-processing (the pipeline is built to host bloom/vignette; none attached).
+The **other ten rooms** (only the Cistern is composed; M7 builds the grey-box
+map), note **behaviours** (categories are data only; nothing acts on them),
+combat, story, menus, saves, a melody journal, rhythm/timing matching, real
+**audio** (the synth is a placeholder sine), and **bloom** (the pipeline hosts it;
+the vignette ships, bloom stays off).
 
 ## Numbers worth arguing with
 

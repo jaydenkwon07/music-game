@@ -1,0 +1,88 @@
+GALLERY TILE MASK  (M6 reference for room two)  -- revision 2
+================================================================
+Grid: 96 cols x 18 rows, 30px tiles (2880x540 px = 3 x 1 screens).
+Coordinates are 0-indexed tile cells, origin top-left, x = column, y = row.
+This file is the authority for tile positions in this reference set. The PNGs are
+illustrative for look; if they disagree with this file, this file wins. Once the
+geometry lives in the room's data file, THAT file is the authority and this becomes
+a snapshot of where it started.
+
+Revision 2: the W corridor moved from rows 8-9 to rows 13-14 so the landing mirrors the
+Cistern's locked east door (rows 13-14), as the edge-band convention requires. The left end
+of the floor opens at x=4 for rows 4-14. Nothing else changed.
+
+What this is: a general idea of the room, not a finished spec. The Gallery replaces room_b
+in M6 and keeps room_b's two exits and their targets (W to room_a, and a second exit to
+room_c). The S exit is the moved second exit and is PROVISIONAL: it stays wired to room_c
+until M7 rewires it toward the Drip chamber.
+
+Legend (grid section)
+  #  solid rock
+  .  walkable floor (includes the corridor slots below)
+  o  interior outcrop: rock for collision and terrain, a free-standing mass
+
+Counts: floor 1165, rock 527, outcrop 36.
+Solid rock is 30.5% of bounds (outcrops excluded), 32.6% counting outcrops.
+Spec band is 20-30% (written against the 48x36 Cistern). A 96x18 room is ~22% wall before
+any carving (two 2-row walls plus the end walls), so ~31% is about as low as this shape goes
+without 1-row walls. Treat 30-33% as on target; a lint warning here is expected, not a defect.
+Narrowest passage: 3 rows (above the outcrop at cols 52-53). Pinch rows: 4-14.
+Collision follows the 45-degree bevel on convex corners (M5 ruling): what looks solid is
+solid. Do not add wobble or overhang; there is no room-level silhouette layer.
+
+Exits (corridor slots are 2 tiles wide, straight, all floor '.')
+  W  from the Cistern   cols 0-3, rows 13-14   unmarked gap: no frame, no gems, no light
+  S  onward exit        cols 84-85, rows 13-17 provisional; unmarked gap
+  Aprons: W is 4 tiles, S is 5 tiles (straight). Both exits are edge-band, 2 tiles wide.
+  This room has NO doors. Door A stands on the Cistern side. No footprints, no approach
+  clearances, no reserved door zones.
+
+Entries (proposed; first cell of the two-tile opening, one tile inside the trigger band)
+  from_a  [1, 13]    landing from the Cistern (W). No door on this side, so plain inset 1.
+  from_c  [84, 16]   landing from room_c (S), one tile inside the opening
+
+Edge-band trigger tiles (outermost tile of each corridor)
+  W  col 0, rows 13-14
+  S  cols 84-85, row 17
+
+Keep clear (no content of any kind)
+  W apron  cols 0-3,   rows 13-14
+  S apron  cols 84-85, rows 13-17
+
+Camera windows (32x18 tiles each; the room scrolls horizontally only)
+  screen A  cols 0-31    screen B  cols 32-63    screen C  cols 64-95
+  Vertical is pinned (the room is exactly one screen tall): watch for jitter at the edges.
+
+Shape notes (the "shelf")
+  A long cave with two pinches (cols 32-38 and 65-70, rows 4-14) that split it into three
+  beats, one per screen. Screen A is the entry hall, screen B the long bay (the top wall
+  lifts to row 1 at cols 50-58), screen C the east chamber with the S exit set into a
+  recessed south wall. Natural and asymmetric: irregular, never a rectangle.
+
+Existing content (from room_b, kept in place)
+  pickup n_mend at [16, 8]  -- floor, screen A, outside both aprons. No chimes, no doors.
+
+Illustrative only (not authoritative)
+  rubble slab centres (cells): (21,12), (41,12), (58,6), (88,7)
+  The Cistern carries 3 pieces; the cap for this room is the owner's call.
+  player in the images: cell (7, 12), near the W gap; the player and the pickup emit light.
+
+--- grid: next 18 lines, 96 chars each ---
+################################################################################################
+#################################################...........####################################
+######.....................#################...................#############...............#####
+#####.........................###########........................########...................####
+####........................................................................................####
+####................................................oo.......................................###
+####................................................oo.......................oo..............###
+####..........................................oo............................oooo.............###
+####.........................................oooo............................oo..............###
+####..........................................oo.............................................###
+####..........oo...............................o......oo.....................................###
+####.........oooo....................................oooo....................................###
+####..........oo......................................o......................................###
+.................................................................................###..##....####
+................................................................................####..###...####
+######........................###########.......................#########......#####..##########
+########...................#################.................#######################..##########
+####################################################################################..##########

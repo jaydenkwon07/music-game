@@ -18,68 +18,22 @@ corner, and here the slab already covers those corners). The diagonal squeeze a 
 open between two free-standing rock cells is a separate, whole-map concern — see
 m5-progress "Carry to 5a" — and is out of scope for this four-room seal.
 
-Numbers mirror the code: TILE from room.gd, DOOR_INSET/opening from room.gd, SLAB from
-door.gd (slab_size), PLAYER from player.tscn. Keep them in sync if those change.
+Numbers and placement maths now come from `roomlib` (the Python mirror of RoomGeometry), so
+this no longer hand-keeps them — the M6 Step 2b consolidation. STEP is the one seal-test-only
+knob. door_rect/band_rect are derived there, not here.
 
 Exit non-zero on any failure, like validate_rooms.py.
 """
 
-import json
 import sys
 from collections import deque
-from pathlib import Path
 
-TILE = 30
-DOOR_INSET = 1.5            # room.gd DOOR_INSET
-SLAB_W, SLAB_H = 72.0, 90.0  # door.gd slab_size
-PLAYER = 30.0              # player.tscn CollisionShape2D (30x30)
-EDGE_THICK = 24.0          # room.gd EDGE_TRIGGER_THICKNESS
+import roomlib
+from roomlib import PLAYER, TILE, cell_center, door_rect, band_rect, inward
+
 STEP = 5.0                 # flood-fill sampling, small vs PLAYER
 
-ROOM = Path(__file__).resolve().parent.parent / "data" / "rooms" / "room_a.json"
-
-
-def cell_center(x, y):
-    return (x * TILE + TILE * 0.5, y * TILE + TILE * 0.5)
-
-
-def inward(at, w, h):
-    x, y = at
-    if x <= 0:
-        return (1, 0)
-    if x >= w - 1:
-        return (-1, 0)
-    if y <= 0:
-        return (0, 1)
-    if y >= h - 1:
-        return (0, -1)
-    return (0, 0)
-
-
-def opening_offset(inw):
-    ix, iy = inw
-    return (abs(iy) * TILE * 0.5, abs(ix) * TILE * 0.5)
-
-
-def door_rect(link_at, inw):
-    cx, cy = cell_center(*link_at)
-    ox, oy = opening_offset(inw)
-    dx = cx + inw[0] * DOOR_INSET * TILE + ox
-    dy = cy + inw[1] * DOOR_INSET * TILE + oy
-    return (dx - SLAB_W * 0.5, dy - SLAB_H * 0.5, dx + SLAB_W * 0.5, dy + SLAB_H * 0.5)
-
-
-def band_rect(link_at, inw):
-    # room.gd _edge_band_position / _edge_band_size: the trigger straddling the boundary.
-    cx, cy = cell_center(*link_at)
-    ox, oy = opening_offset(inw)
-    bx = cx + ox - inw[0] * TILE * 0.5
-    by = cy + oy - inw[1] * TILE * 0.5
-    if inw[0] != 0:
-        w, h = EDGE_THICK, TILE * 2.0
-    else:
-        w, h = TILE * 2.0, EDGE_THICK
-    return (bx - w * 0.5, by - h * 0.5, bx + w * 0.5, by + h * 0.5)
+ROOM = roomlib.ROOMS_DIR / "room_a.json"
 
 
 def overlaps(box, rect):
@@ -137,7 +91,7 @@ def reachable_bands(grid, rock, w_px, h_px, closed_slabs, targets, start):
 
 
 def main():
-    data = json.loads(ROOM.read_text())
+    data = roomlib.load_room(ROOM)
     grid = data["grid"]
     h, w = len(grid), len(grid[0])
     w_px, h_px = w * TILE, h * TILE

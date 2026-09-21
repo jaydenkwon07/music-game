@@ -28,8 +28,10 @@ The reference still is `docs/m5-reference/cistern-final.png`. Record:
 Open gates carried forward: **M3's play-through gate** (a stranger gets the loop
 in 5–10 min) is **waived** to M7's stronger version (2026-09-18); **M1's aesthetic
 gate** ("does playing feel good on its own") stays deferred until the placeholder
-sine is replaced with real composed sound. **Next is M6** — authoring pipeline +
-room two, gated on a measured hours-per-room number.
+sine is replaced with real composed sound. **M6 is in progress** — an authoring
+pipeline + room two (the Gallery, replacing `room_b`) built to the M5 bar. The
+hours-per-room measurement was dropped (no deadline); records in
+`docs/m6-progress.md`.
 
 ## Running it
 

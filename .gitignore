@@ -4,5 +4,8 @@
 # CLAUDE.md is kept on disk but untracked — repo-wide convention for ~/Code/Projects
 CLAUDE.md
 
+# Python bytecode from scripts/
+__pycache__/
+
 # macOS
 .DS_Store

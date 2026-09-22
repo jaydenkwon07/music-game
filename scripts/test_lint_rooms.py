@@ -63,6 +63,29 @@ def _gate_room(prop_at):
 	}
 
 
+def _gate_inset_room():
+	# 12-wide x 6-tall, an east opening at rows 2-3 with a requires link and entry.
+	# Floor is carved so that DOOR_ENTRY_INSET (3.5) landing at col 8 is on floor,
+	# but ENTRY_INSET (1) landing at col 10 is on rock. This tests that requires
+	# links use DOOR_ENTRY_INSET, not ENTRY_INSET.
+	grid = ["############"] * 6
+	grid[2] = "###########."
+	grid[3] = "###########."
+	grid = [list(r) for r in grid]
+	# Carve cols 4-8 as floor at rows 2-3 (covers the 3.5-tile deep landing at col 8)
+	for y in (2, 3):
+		for x in range(4, 9):  # 4,5,6,7,8 only
+			grid[y][x] = "."
+	grid = ["".join(r) for r in grid]
+	return {
+		"room_id": "inset_fixture", "size_tiles": [12, 6], "grid": grid,
+		"entries": {"from_east": [11, 2]},
+		"links": [{"at": [11, 2], "to_room": "x", "to_entry": "from_gate",
+		           "requires": {"note": "n_step"}}],
+		"pickups": [], "chimes": [], "sealed_doors": [], "props": [],
+	}
+
+
 def has(msgs: list[str], needle: str) -> bool:
 	return any(needle in m for m in msgs)
 
@@ -122,6 +145,12 @@ def main() -> int:
 	# Ability gate footprint: prop clear of the gate.
 	errors, _ = lint_room(_gate_room((5, 2)))
 	check(not has(errors, "reserved footprint"), "a prop clear of an ability gate is ok")
+
+	# Entry landing with DOOR_ENTRY_INSET for requires link: floor carved to 3.5 tiles deep,
+	# so DOOR_ENTRY_INSET landing is on floor, but ENTRY_INSET landing would be on rock.
+	# This tests that requires links use DOOR_ENTRY_INSET (not ENTRY_INSET).
+	errors, _ = lint_room(_gate_inset_room())
+	check(errors == [], "entry landing for requires link uses DOOR_ENTRY_INSET (lands on floor)")
 
 	print(f"\n{_passed} passed, {_failed} failed")
 	return 1 if _failed else 0

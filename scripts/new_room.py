@@ -2,7 +2,6 @@
 """Scaffold a lint-green solid-rock room to carve from (spec §6 Step 0)."""
 from __future__ import annotations
 import json, sys
-from pathlib import Path
 import roomlib
 
 def scaffold(room_id: str, cols: int, rows: int) -> dict:

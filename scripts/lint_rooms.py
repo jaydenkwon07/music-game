@@ -100,7 +100,7 @@ def lint_room(data: dict) -> tuple[list[str], list[str]]:
 			link = _nearest_link(links, cell)
 			at = tuple(link.get("at", [0, 0]))
 			inw = roomlib.inward(at, cols, rows)
-			inset = roomlib.DOOR_ENTRY_INSET if link.get("door") else float(roomlib.ENTRY_INSET)
+			inset = roomlib.DOOR_ENTRY_INSET if (link.get("door") or link.get("requires")) else float(roomlib.ENTRY_INSET)
 			lx, ly = roomlib.inset_point(at, inw, inset)
 			landing = (int(lx // roomlib.TILE), int(ly // roomlib.TILE))
 			if not is_floor(*landing):
@@ -113,9 +113,10 @@ def lint_room(data: dict) -> tuple[list[str], list[str]]:
 	for d in list(data.get("links", [])) + list(data.get("sealed_doors", [])):
 		at = tuple(d.get("at", [0, 0]))
 		inw = roomlib.inward(at, cols, rows)
-		if inw == (0, 0) or (d.get("door") is None and "melody_id" not in d and "sockets" not in d):
-			continue  # a plain (doorless) link reserves nothing
-		name = d.get("door") or "sealed_door"
+		has_leaf = d.get("door") is not None or "melody_id" in d or "sockets" in d or d.get("requires") is not None
+		if inw == (0, 0) or not has_leaf:
+			continue  # a plain (free) link reserves nothing
+		name = d.get("door") or ("ability gate" if d.get("requires") else "sealed_door")
 		reserved = _reserved_cells(at, inw)
 		for cell, what in content_cells:
 			if cell in reserved:

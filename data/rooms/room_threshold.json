@@ -1,6 +1,9 @@
 {
-  "room_id": "room_c",
-  "size_tiles": [32, 18],
+  "room_id": "room_threshold",
+  "size_tiles": [
+    32,
+    18
+  ],
   "grid": [
     "################################",
     "################################",
@@ -22,20 +25,21 @@
     "################################"
   ],
   "entries": {
-    "from_b": [4, 8]
+    "from_span": [
+      3,
+      8
+    ]
   },
   "links": [
     {
-      "at": [0, 8],
-      "to_room": "room_b",
-      "to_entry": "from_c"
+      "at": [
+        0,
+        8
+      ],
+      "to_room": "room_span",
+      "to_entry": "from_threshold"
     }
   ],
-  "pickups": [
-    {
-      "note_id": "n_step",
-      "at": [16, 8]
-    }
-  ],
+  "pickups": [],
   "chimes": []
 }

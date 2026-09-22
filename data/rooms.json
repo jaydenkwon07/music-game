@@ -1,39 +1,36 @@
 {
-  "start": { "room": "room_a", "entry": "spawn" },
+  "start": { "room": "room_hollow", "entry": "spawn" },
   "rooms": {
-    "room_a": {
-      "display_name": "Threshold",
-      "notes": ["n_break"],
-      "entries": ["spawn", "from_b", "from_d"],
-      "exits": [
-        { "to": "room_b", "to_entry": "from_a", "door": "door_tutorial" },
-        { "to": "room_d", "to_entry": "from_a", "door": "door_backtrack" }
-      ]
-    },
-    "room_b": {
-      "display_name": "Gallery",
-      "notes": ["n_mend"],
-      "entries": ["from_a", "from_c"],
-      "exits": [
-        { "to": "room_a", "to_entry": "from_b" },
-        { "to": "room_c", "to_entry": "from_b" }
-      ]
-    },
-    "room_c": {
-      "display_name": "Deep",
-      "notes": ["n_step"],
-      "entries": ["from_b"],
-      "exits": [
-        { "to": "room_b", "to_entry": "from_c" }
-      ]
-    },
-    "room_d": {
-      "display_name": "Reward",
-      "notes": [],
-      "entries": ["from_a"],
-      "exits": [
-        { "to": "room_a", "to_entry": "from_d" }
-      ]
-    }
+    "room_hollow":      { "display_name": "Hollow", "notes": ["n_break"], "entries": ["spawn", "from_cistern"],
+                          "exits": [ { "to": "room_a", "to_entry": "from_hollow" } ] },
+    "room_a":           { "display_name": "Cistern", "notes": [], "entries": ["spawn", "from_hollow", "from_gallery", "from_antechamber"],
+                          "exits": [ { "to": "room_hollow", "to_entry": "from_cistern" },
+                                     { "to": "room_b", "to_entry": "from_a", "door": "door_tutorial" },
+                                     { "to": "room_antechamber", "to_entry": "from_cistern", "door": "door_omega" } ] },
+    "room_b":           { "display_name": "Gallery", "notes": [], "entries": ["from_a", "from_drip"],
+                          "exits": [ { "to": "room_a", "to_entry": "from_gallery" },
+                                     { "to": "room_drip", "to_entry": "from_gallery" } ] },
+    "room_drip":        { "display_name": "Drip chamber", "notes": ["n_step"], "entries": ["from_gallery", "from_overlook"],
+                          "exits": [ { "to": "room_b", "to_entry": "from_drip" },
+                                     { "to": "room_overlook", "to_entry": "from_drip", "requires": { "note": "n_step" } } ] },
+    "room_overlook":    { "display_name": "Overlook", "notes": [], "entries": ["from_drip", "from_stair"],
+                          "exits": [ { "to": "room_drip", "to_entry": "from_overlook" },
+                                     { "to": "room_stair", "to_entry": "from_overlook" } ] },
+    "room_stair":       { "display_name": "The Stair", "notes": [], "entries": ["from_overlook", "from_choir"],
+                          "exits": [ { "to": "room_overlook", "to_entry": "from_stair" },
+                                     { "to": "room_choir", "to_entry": "from_stair", "door": "door_b" } ] },
+    "room_choir":       { "display_name": "The Choir", "notes": ["n_mend"], "entries": ["from_stair", "from_span"],
+                          "exits": [ { "to": "room_stair", "to_entry": "from_choir" },
+                                     { "to": "room_span", "to_entry": "from_choir" } ] },
+    "room_span":        { "display_name": "The Span", "notes": [], "entries": ["from_choir", "from_threshold"],
+                          "exits": [ { "to": "room_choir", "to_entry": "from_span" },
+                                     { "to": "room_threshold", "to_entry": "from_span", "door": "door_c" } ] },
+    "room_threshold":   { "display_name": "Threshold", "notes": [], "entries": ["from_span"],
+                          "exits": [ { "to": "room_span", "to_entry": "from_threshold" } ] },
+    "room_antechamber": { "display_name": "Antechamber", "notes": [], "entries": ["from_cistern", "from_resonance"],
+                          "exits": [ { "to": "room_a", "to_entry": "from_antechamber" },
+                                     { "to": "room_resonance", "to_entry": "from_antechamber" } ] },
+    "room_resonance":   { "display_name": "Resonance chamber", "notes": [], "entries": ["from_antechamber"],
+                          "exits": [ { "to": "room_antechamber", "to_entry": "from_resonance" } ] }
   }
 }

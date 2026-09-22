@@ -60,3 +60,22 @@ static func build_door(parent: Node2D, geom: RoomGeometry, door_id: String, link
 	door.facing = inward
 	door.position = geom.inset_point(link_at, inward, RoomGeometry.DOOR_INSET)
 	parent.add_child(door)
+
+
+## An inter-room ability gate: the leaf of a `requires` link, placed like a door leaf.
+static func build_ability_gate(parent: Node2D, geom: RoomGeometry, note_id: String, link_at: Vector2i, inward: Vector2i) -> void:
+	var gate := AbilityGate.new()
+	gate.required_note = note_id
+	gate.facing = inward
+	gate.position = geom.inset_point(link_at, inward, RoomGeometry.DOOR_INSET)
+	parent.add_child(gate)
+
+
+## Internal ability gates (e.g. the Span fissure): a blocker inside the room, not on an edge.
+static func build_ability_gates(parent: Node2D, geom: RoomGeometry, defs: Array) -> void:
+	for d in defs:
+		var gate := AbilityGate.new()
+		gate.required_note = str(d.get("note", ""))
+		gate.facing = RoomGeometry.to_v2i(d.get("facing", [0, 1]))
+		gate.position = geom.cell_center(RoomGeometry.to_v2i(d.get("at", [0, 0])))
+		parent.add_child(gate)

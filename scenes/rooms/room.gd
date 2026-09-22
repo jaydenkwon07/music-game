@@ -46,6 +46,7 @@ func _ready() -> void:
 	RoomContent.build_pickups(self, _geom, geo.get("pickups", []))
 	RoomContent.build_chimes(self, _geom, geo.get("chimes", []))
 	RoomContent.build_sealed_doors(self, _geom, geo.get("sealed_doors", []))
+	RoomContent.build_ability_gates(self, _geom, geo.get("ability_gates", []))
 
 
 ## World-space extent, for the camera clamp (§6.2).
@@ -120,7 +121,8 @@ func _record_entries(entries: Dictionary, links: Array) -> void:
 			if not link.is_empty():
 				var at := RoomGeometry.to_v2i(link.get("at", [0, 0]))
 				var inward := _geom.inward(at)
-				var inset := RoomGeometry.DOOR_ENTRY_INSET if not str(link.get("door", "")).is_empty() else float(RoomGeometry.ENTRY_INSET)
+				var has_leaf := not str(link.get("door", "")).is_empty() or not (link.get("requires", {}) as Dictionary).is_empty()
+				var inset := RoomGeometry.DOOR_ENTRY_INSET if has_leaf else float(RoomGeometry.ENTRY_INSET)
 				_entries[str(entry_id)] = _geom.inset_point(at, inward, inset)
 				continue
 		_entries[str(entry_id)] = _geom.cell_center(cell)
@@ -158,6 +160,11 @@ func _build_links(links: Array) -> void:
 		var door_id := str(link_def.get("door", ""))
 		if not door_id.is_empty():
 			RoomContent.build_door(self, _geom, door_id, at, inward)
+		else:
+			var req: Dictionary = link_def.get("requires", {})
+			var req_note := str(req.get("note", ""))
+			if not req_note.is_empty():
+				RoomContent.build_ability_gate(self, _geom, req_note, at, inward)
 
 
 func _on_link_transition(to_room: String, to_entry: String) -> void:

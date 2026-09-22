@@ -47,13 +47,17 @@
       10,
       10
     ],
-    "from_b": [
+    "from_gallery": [
       44,
       13
     ],
-    "from_d": [
+    "from_antechamber": [
       23,
       5
+    ],
+    "from_hollow": [
+      1,
+      26
     ]
   },
   "links": [
@@ -62,9 +66,9 @@
         23,
         0
       ],
-      "to_room": "room_d",
-      "to_entry": "from_a",
-      "door": "door_backtrack"
+      "to_room": "room_antechamber",
+      "to_entry": "from_cistern",
+      "door": "door_omega"
     },
     {
       "at": [
@@ -74,30 +78,23 @@
       "to_room": "room_b",
       "to_entry": "from_a",
       "door": "door_tutorial"
-    }
-  ],
-  "pickups": [
+    },
     {
-      "note_id": "n_break",
       "at": [
-        6,
-        12
-      ]
+        0,
+        26
+      ],
+      "to_room": "room_hollow",
+      "to_entry": "from_cistern"
     }
   ],
+  "pickups": [],
   "chimes": [
     {
       "melody_id": "door_tutorial",
       "at": [
         38,
         10
-      ]
-    },
-    {
-      "melody_id": "door_backtrack",
-      "at": [
-        27,
-        6
       ]
     }
   ],

@@ -29,7 +29,7 @@
       1,
       13
     ],
-    "from_c": [
+    "from_drip": [
       84,
       16
     ]
@@ -41,26 +41,18 @@
         13
       ],
       "to_room": "room_a",
-      "to_entry": "from_b"
+      "to_entry": "from_gallery"
     },
     {
       "at": [
         84,
         17
       ],
-      "to_room": "room_c",
-      "to_entry": "from_b"
+      "to_room": "room_drip",
+      "to_entry": "from_gallery"
     }
   ],
-  "pickups": [
-    {
-      "note_id": "n_mend",
-      "at": [
-        16,
-        8
-      ]
-    }
-  ],
+  "pickups": [],
   "chimes": [],
   "props": [
     {

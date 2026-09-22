@@ -1,0 +1,12 @@
+{
+  "id": "door_omega_frag3",
+  "display_name": "Omega Fragment III",
+  "notes": ["C4"],
+  "rhythm": [1],
+  "key": "C",
+  "mode": "major",
+  "tempo_bpm": 90,
+  "match_rules": { "order_matters": true, "timing_matters": false, "octave_matters": false, "allow_transposition": false },
+  "finale_role": "unassigned",
+  "placeholder": true
+}

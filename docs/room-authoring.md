@@ -23,7 +23,13 @@ A room lives in two files, referenced by id (the same pattern as the note regist
   footprints, openings and landings are **derived, never hand-kept**.
 
 A room's `.tscn` is not edited to change layout — geometry is data-driven. `room.gd` paints the
-grid and `RoomContent` instances the content from the JSON.
+grid and `RoomContent` instances the content from the JSON. **But a NEW room still needs its own
+thin `scenes/rooms/<id>.tscn` created** — copy an existing one (e.g. `room_a.tscn`), rename the
+node, and set `room_id`. `World._instance_room` loads rooms by that path, so a room with JSON but
+no scene fails at runtime (`no room scene at …`) — and nothing in `validate_rooms`/`lint_rooms`/
+`--headless --import` catches it, because none of them instance a room through `World`. Verify a
+new room actually loads with `godot --headless --quit-after 90` (or by instancing it), not just
+`--import`.
 
 ---
 

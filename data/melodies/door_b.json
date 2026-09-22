@@ -1,0 +1,12 @@
+{
+  "id": "door_b",
+  "display_name": "Choir Door",
+  "notes": ["C4", "E4"],
+  "rhythm": [1, 1],
+  "key": "C",
+  "mode": "major",
+  "tempo_bpm": 90,
+  "match_rules": { "order_matters": true, "timing_matters": false, "octave_matters": false, "allow_transposition": false },
+  "finale_role": "unassigned",
+  "placeholder": true
+}

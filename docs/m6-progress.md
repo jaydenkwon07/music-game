@@ -1,7 +1,14 @@
 # M6 progress — authoring pipeline and room two
 
-**Status:** in progress. Started 2026-09-20.
+**Status:** **CLOSED 2026-09-21 — gate MET (owner).** Started 2026-09-20.
 **Spec:** `docs/m6-spec.md` (measurement half superseded — see the re-scope below).
+
+**Gate (re-scoped §):** the Gallery authored to the M5 quality bar, and the authoring pipeline
+that made it cheaper exists. **Met:** owner signed off the composed Gallery on `godot .`
+(2026-09-21); the pipeline is the `room.gd` split (2a) + `lint_rooms`/`roomlib` (2b), judged by
+removing hand-error-prone steps, not hours. Recipe: `docs/room-authoring.md`. Reference still:
+`docs/m6-reference/gallery-final.png` (+ `gallery-lit.png`). Next milestone: **M7 — the grey-box
+map** (not yet spec'd); it carries M3's waived play-through gate and must not waive it.
 
 ---
 
@@ -181,3 +188,7 @@ black-on-white distinguishability is unchanged from M5.
 - **2026-09-21** — Step 5 done (pending owner sign-off): light pass is a no-op (dim traversal
   shelf, the §9 finding, owner-accepted); 5 rubble props added (cap ≤6); silhouette passes;
   `gallery-final.png` + `gallery-lit.png` captured. Verify green. Gate: owner judges on `godot .`.
+- **2026-09-21** — **owner signed off ("done, looks good"); M6 CLOSED, gate MET.** Step 6:
+  `docs/room-authoring.md` written from the Gallery build; CLAUDE.md §2/§8/§9 and README trimmed
+  to M6-done / M7-next. The pipeline built was 2a + 2b only (2c–2f skipped — recon didn't show
+  they removed a concrete step for one room; revisit if M7 authoring proves them worth it).

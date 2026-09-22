@@ -11,10 +11,11 @@ Design Logs). The working agreement is `CLAUDE.md`; per-milestone records are in
 
 ## State
 
-**M0–M5 built.** M0 movement + data seam; M1 the note toy; M2 one data-driven
+**M0–M6 built.** M0 movement + data seam; M1 the note toy; M2 one data-driven
 door; M3 the vertical slice (four rooms, real transitions, persistent doors,
 clue chimes, room-clamped camera, instrument-state keyboard widget); M4 the
-technical visual foundation; **M5 the cave look.**
+technical visual foundation; M5 the cave look; **M6 the authoring pipeline +
+room two.**
 
 **M5 is complete (2026-09-20) — the store-page gate is MET.** The **Cistern**
 (`room_a`, 48×36, the first scrolling room) is composed to store-page quality: a
@@ -25,13 +26,20 @@ landmark), a decorative five-socket sealed door, and a light rubble detail pass.
 The reference still is `docs/m5-reference/cistern-final.png`. Record:
 `docs/m5-progress.md`.
 
+**M6 is complete (2026-09-21) — gate MET.** The **Gallery** (`room_b`, 96×18, a
+3-screen horizontal shelf) is authored to the M5 bar and its geometry is LOCKED;
+the authoring pipeline that made it cheaper is the `room.gd` split
+(`RoomGeometry` + `RoomContent`) and the room lint (`lint_rooms.py` on
+`roomlib.py`). The Gallery is a deliberately dim traversal shelf (doorless, so no
+light beacon). Recipe: `docs/room-authoring.md`; record: `docs/m6-progress.md`;
+reference still: `docs/m6-reference/gallery-final.png`.
+
 Open gates carried forward: **M3's play-through gate** (a stranger gets the loop
 in 5–10 min) is **waived** to M7's stronger version (2026-09-18); **M1's aesthetic
 gate** ("does playing feel good on its own") stays deferred until the placeholder
-sine is replaced with real composed sound. **M6 is in progress** — an authoring
-pipeline + room two (the Gallery, replacing `room_b`) built to the M5 bar. The
-hours-per-room measurement was dropped (no deadline); records in
-`docs/m6-progress.md`.
+sine is replaced with real composed sound. **Next is M7** — the grey-box map (all
+11 rooms, connected, gated, validated), which carries M3's waived gate and must
+not waive it.
 
 ## Running it
 

@@ -113,7 +113,7 @@ def main() -> int:
 	check(has(lint_room(r)[0], "not on the perimeter"), "an interior link is an error")
 
 	# Opening cell not floor.
-	r = clone(); set_cell(r, 23, 0, "#")  # block one cell of door_backtrack's N opening
+	r = clone(); set_cell(r, 23, 0, "#")  # block one cell of door_omega's N opening
 	check(has(lint_room(r)[0], "opening cell"), "a rocked-over opening is an error")
 
 	# Pickup off floor. room_a no longer carries a pickup of its own (n_break moved to
@@ -122,7 +122,7 @@ def main() -> int:
 	check(has(lint_room(r)[0], "is not on floor"), "content off floor is an error")
 
 	# Content in a door's reserved footprint.
-	r = clone(); r.setdefault("props", []).append({"at": [23, 2]})  # inside door_backtrack's leaf
+	r = clone(); r.setdefault("props", []).append({"at": [23, 2]})  # inside door_omega's leaf
 	check(has(lint_room(r)[0], "reserved footprint"), "content in a door footprint is an error")
 
 	# Entry landing not floor.

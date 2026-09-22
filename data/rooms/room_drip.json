@@ -64,5 +64,13 @@
       ]
     }
   ],
-  "chimes": []
+  "chimes": [
+    {
+      "melody_id": "door_omega_frag1",
+      "at": [
+        8,
+        10
+      ]
+    }
+  ]
 }

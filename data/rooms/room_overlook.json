@@ -53,5 +53,13 @@
     }
   ],
   "pickups": [],
-  "chimes": []
+  "chimes": [
+    {
+      "melody_id": "door_omega_frag2",
+      "at": [
+        8,
+        12
+      ]
+    }
+  ]
 }

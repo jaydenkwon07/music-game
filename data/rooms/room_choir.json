@@ -79,7 +79,15 @@
       ]
     }
   ],
-  "chimes": [],
+  "chimes": [
+    {
+      "melody_id": "door_omega_frag3",
+      "at": [
+        30,
+        10
+      ]
+    }
+  ],
   "sealed_doors": [
     {
       "at": [

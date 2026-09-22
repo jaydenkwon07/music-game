@@ -43,6 +43,26 @@ def set_cell(room: dict, x: int, y: int, ch: str) -> None:
 	room["grid"][y] = "".join(row)
 
 
+def _gate_room(prop_at):
+	# 12-wide x 6-tall, a 2-tile east opening at rows 2-3 with an ability gate
+	grid = ["############"] * 6
+	grid[2] = "###########."   # col 11 (east edge) floor
+	grid[3] = "###########."
+	# carve floor inward so the opening + apron are floor
+	grid = [list(r) for r in grid]
+	for y in (2, 3):
+		for x in range(4, 12):
+			grid[y][x] = "."
+	grid = ["".join(r) for r in grid]
+	return {
+		"room_id": "gate_fixture", "size_tiles": [12, 6], "grid": grid,
+		"entries": {"from_east": [11, 2]},
+		"links": [{"at": [11, 2], "to_room": "x", "to_entry": "from_gate",
+		           "requires": {"note": "n_step"}}],
+		"pickups": [], "chimes": [], "sealed_doors": [], "props": [{"at": list(prop_at)}],
+	}
+
+
 def has(msgs: list[str], needle: str) -> bool:
 	return any(needle in m for m in msgs)
 
@@ -94,6 +114,14 @@ def main() -> int:
 	for y in range(4, 32):  # carve out most of the rock so excl drops well below 20%
 		r["grid"][y] = "." * len(r["grid"][y])
 	check(has(lint_room(r)[1], "outside the 20–30% target"), "off-target rock is a warning")
+
+	# Ability gate footprint: prop in the gate leaf.
+	errors, _ = lint_room(_gate_room((9, 2)))
+	check(has(errors, "reserved footprint"), "a prop in an ability gate footprint is an error")
+
+	# Ability gate footprint: prop clear of the gate.
+	errors, _ = lint_room(_gate_room((5, 2)))
+	check(not has(errors, "reserved footprint"), "a prop clear of an ability gate is ok")
 
 	print(f"\n{_passed} passed, {_failed} failed")
 	return 1 if _failed else 0

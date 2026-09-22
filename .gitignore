@@ -9,3 +9,6 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# Subagent-driven-development scratch (ledgers, briefs, review packages)
+.superpowers/

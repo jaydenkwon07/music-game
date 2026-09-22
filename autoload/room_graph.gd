@@ -39,7 +39,8 @@ func room(room_id: String) -> Dictionary:
 	return _rooms.get(room_id, {})
 
 
-## A room's exits: [{to, to_entry, door}] (door may be absent for a free gap).
+## A room's exits: [{to, to_entry, door?, requires?}] (door and requires may both be absent
+## for a free gap; an exit carries at most one of the two).
 func exits(room_id: String) -> Array:
 	return room(room_id).get("exits", [])
 
@@ -122,6 +123,14 @@ func _check_room(room_id: String) -> void:
 		if not door.is_empty() and MelodyLibrary.get_melody(door).is_empty():
 			push_error("RoomGraph[%s]: exit gated by unknown melody '%s'." % [room_id, door])
 
+		var req: Dictionary = exit.get("requires", {})
+		if not req.is_empty():
+			if not door.is_empty():
+				push_error("RoomGraph[%s]: exit %s has both a door and a requires." % [room_id, exit])
+			var req_note := str(req.get("note", ""))
+			if NoteRegistry.by_id(req_note).is_empty():
+				push_error("RoomGraph[%s]: ability gate names unknown note '%s'." % [room_id, req_note])
+
 	# The geometry must mirror the graph: every graph exit needs a matching link,
 	# and every geometry entry/link must name a defined entry (§5.3).
 	var geo: Dictionary = _geometry.get(room_id, {})
@@ -142,6 +151,7 @@ func _link_matches(links: Array, exit: Dictionary) -> bool:
 			str(link.get("to_room", "")) == str(exit.get("to", ""))
 			and str(link.get("to_entry", "")) == str(exit.get("to_entry", ""))
 			and str(link.get("door", "")) == str(exit.get("door", ""))
+			and str((link.get("requires", {}) as Dictionary).get("note", "")) == str((exit.get("requires", {}) as Dictionary).get("note", ""))
 		):
 			return true
 	return false

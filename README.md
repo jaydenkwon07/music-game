@@ -37,9 +37,16 @@ reference still: `docs/m6-reference/gallery-final.png`.
 Open gates carried forward: **M3's play-through gate** (a stranger gets the loop
 in 5–10 min) is **waived** to M7's stronger version (2026-09-18); **M1's aesthetic
 gate** ("does playing feel good on its own") stays deferred until the placeholder
-sine is replaced with real composed sound. **Next is M7** — the grey-box map (all
-11 rooms, connected, gated, validated), which carries M3's waived gate and must
-not waive it.
+sine is replaced with real composed sound.
+
+**M7 — the grey-box map — is underway.** Its **code spine is built and merged**
+(2026-09-22): the ability-gate schema, `scripts/new_room.py`, and the real
+eleven-room `data/rooms.json` with nine walkable grey-box rooms (open boxes;
+archetype shaping deferred), Doors A/B/C/Ω, and Ω's three fragment chimes — the
+map is connected, gated, solvable and runs. Spec + plan under
+`docs/superpowers/`. **Remaining (the carving phase):** carve the rooms to their
+archetypes, the Cistern's fifth opening + one-way shortcut, then the **stranger
+play-through gate — carries M3's waived gate and must not be waived.**
 
 ## Running it
 
@@ -137,8 +144,9 @@ scripts/              validate_rooms.py (+ one-off migration helpers)
 
 ## What isn't in yet
 
-The **other ten rooms** (only the Cistern is composed; M7 builds the grey-box
-map), note **behaviours** (categories are data only; nothing acts on them),
+The **final quality of the other nine rooms** (Cistern + Gallery are composed to
+the M5 bar; M7's other nine exist as walkable grey-box open boxes, not yet carved
+to their archetypes or lit), note **behaviours** (categories are data only; nothing acts on them),
 combat, story, menus, saves, a melody journal, rhythm/timing matching, real
 **audio** (the synth is a placeholder sine), and **bloom** (the pipeline hosts it;
 the vignette ships, bloom stays off).

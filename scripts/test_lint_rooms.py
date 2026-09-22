@@ -116,8 +116,9 @@ def main() -> int:
 	r = clone(); set_cell(r, 23, 0, "#")  # block one cell of door_backtrack's N opening
 	check(has(lint_room(r)[0], "opening cell"), "a rocked-over opening is an error")
 
-	# Pickup off floor.
-	r = clone(); r["pickups"][0]["at"] = [0, 0]  # the NW rock corner
+	# Pickup off floor. room_a no longer carries a pickup of its own (n_break moved to
+	# room_hollow at M7), so append a synthetic one rather than mutating index 0.
+	r = clone(); r.setdefault("pickups", []).append({"note_id": "n_test", "at": [0, 0]})  # NW rock corner
 	check(has(lint_room(r)[0], "is not on floor"), "content off floor is an error")
 
 	# Content in a door's reserved footprint.

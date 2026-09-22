@@ -47,12 +47,24 @@ class AbilityGate(unittest.TestCase):
         self.assertTrue(any("both" in e.lower() for e in errors))
 
     def test_door_and_requires_on_unreachable_exit_also_errors(self):
-        # overlook is unreachable (can only reach it via the gated exit in drip)
-        # even if that exit has both door and requires, the error should fire unconditionally
-        g = graph([{"to": "overlook", "to_entry": "from_drip",
-                    "door": "d1", "requires": {"note": "n_step"}}])
+        # An orphan room with no incoming edges (unreachable) has an exit with both
+        # door and requires. The both-fields error must fire unconditionally, not
+        # only for reachable exits. This test fails if the check is scoped to
+        # reachability.
+        g = {
+            "start": {"room": "hollow", "entry": "spawn"},
+            "rooms": {
+                "hollow":   {"notes": ["n_break"], "entries": ["spawn"],
+                             "exits": [{"to": "drip", "to_entry": "from_hollow"}]},
+                "drip":     {"notes": ["n_step"], "entries": ["from_hollow"],
+                             "exits": []},
+                "orphan":   {"notes": [], "entries": ["from_nowhere"],
+                             "exits": [{"to": "drip", "to_entry": "from_hollow",
+                                        "door": "d1", "requires": {"note": "n_step"}}]},
+            },
+        }
         errors, _ = validate(g, NOTES, MEL)
-        # Should have both fields error and unreachable error
+        # Must flag both-fields error (orphan is never visited by fixpoint)
         self.assertTrue(any("both" in e.lower() for e in errors))
 
 

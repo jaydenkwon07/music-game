@@ -63,28 +63,6 @@ def load_json(path: Path):
         return json.load(f)
 
 
-def _reachability(rooms: dict, notes: dict, melodies: dict, errors: list[str]) -> tuple[set, set, dict]:
-    """Compute the reachability fixpoint. Returns (reachable, collected, door_opened_at).
-
-    This is the shared algorithm used by both validate() and main().
-    Errors for unparseable melodies and unknown required notes are appended to errors.
-    """
-    start_room = ""
-    # Infer start_room from validate's context (caller passes it via rooms structure)
-    # Actually, we need to get it from the graph. Caller must pass it.
-    # Let me refactor: the caller (validate or main) should pass start_room explicitly.
-    # Actually, let me look at how this is called...
-
-    # The issue is that _reachability is called from inside validate() where we have
-    # start = graph.get("start", {}), so we need to either:
-    # A) Have the caller pass start_room
-    # B) Have the caller pass the full graph
-    # Let me use option A: caller passes start_room
-    # But wait, the function signature below shows rooms, notes, melodies...
-    # Let me adjust the approach: make _reachability take start_room as a parameter too.
-    pass
-
-
 def validate(rooms_graph: dict, notes: dict, melodies: dict) -> tuple[list[str], list[str]]:
     """Pure validator. Returns (errors, warnings) for the room graph.
 
@@ -98,30 +76,6 @@ def validate(rooms_graph: dict, notes: dict, melodies: dict) -> tuple[list[str],
     graph = rooms_graph
     rooms = graph.get("rooms", {})
     start = graph.get("start", {})
-
-    def owned_pcs(note_ids) -> set:
-        pcs = set()
-        for nid in note_ids:
-            rec = notes.get(nid)
-            if rec:
-                pc = SEMITONE.get(str(rec.get("pitch_class", "")).upper())
-                if pc is not None:
-                    pcs.add(pc)
-        return pcs
-
-    def melody_pcs(melody_id):
-        """Pitch classes a door's melody demands, or None if the melody is bad."""
-        m = melodies.get(melody_id)
-        if m is None:
-            return None
-        pcs = set()
-        for name in m.get("notes", []):
-            pc = pitch_class(str(name))
-            if pc is None:
-                errors.append(f"melody '{melody_id}' has an unparseable note '{name}'")
-                return None
-            pcs.add(pc)
-        return pcs
 
     # --- Referential integrity (§7.3) ---
     start_room = str(start.get("room", ""))

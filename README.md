@@ -1,4 +1,4 @@
-# Music Game
+# Resonance
 
 Godot 4.7 project. A 2D top-down game where the player collects musical notes and
 plays melodies to open doors. **960×540 internal resolution**, integer-scaled

@@ -63,18 +63,17 @@ def load_json(path: Path):
         return json.load(f)
 
 
-def main() -> int:
+def validate(rooms_graph: dict, notes: dict, melodies: dict) -> tuple[list[str], list[str]]:
+    """Pure validator. Returns (errors, warnings) for the room graph.
+
+    rooms_graph is the graph dict with 'start' and 'rooms' keys.
+    notes maps id -> record.
+    melodies maps id -> record.
+    """
     errors: list[str] = []
     warnings: list[str] = []
 
-    notes = {n["id"]: n for n in load_json(DATA / "notes.json").get("notes", [])}
-    melodies = {}
-    for path in sorted((DATA / "melodies").glob("*.json")):
-        m = load_json(path)
-        if "id" in m:
-            melodies[m["id"]] = m
-
-    graph = load_json(DATA / "rooms.json")
+    graph = rooms_graph
     rooms = graph.get("rooms", {})
     start = graph.get("start", {})
 
@@ -120,8 +119,13 @@ def main() -> int:
             elif to_entry not in rooms[to].get("entries", []):
                 errors.append(f"room '{rid}' exit to '{to}' names missing entry '{to_entry}'")
             door = str(ex.get("door", ""))
+            req = ex.get("requires")
             if door and door not in melodies:
                 errors.append(f"room '{rid}' exit gated by unknown melody '{door}'")
+            if req is not None:
+                need_id = str(req.get("note", ""))
+                if need_id not in notes:
+                    errors.append(f"room '{rid}' ability gate names unknown note '{need_id}'")
 
     # --- Reachability fixpoint (§7 algorithm) ---
     reachable = {start_room} if start_room in rooms else set()
@@ -137,15 +141,25 @@ def main() -> int:
         for rid in list(reachable):
             for ex in rooms[rid].get("exits", []):
                 door = str(ex.get("door", ""))
+                req = ex.get("requires")
                 passable = True
-                if door:
-                    need = melody_pcs(door)
-                    if need is None:
+                if door and req is not None:
+                    errors.append(f"room '{rid}' exit to '{ex.get('to','')}' has both a door and a requires")
+                    passable = False
+                elif req is not None:
+                    need_id = str(req.get("note", ""))
+                    if need_id not in notes:
+                        errors.append(f"room '{rid}' ability gate names unknown note '{need_id}'")
                         passable = False
                     else:
-                        passable = need <= owned
-                        if passable and door not in door_opened_at:
-                            door_opened_at[door] = len(collected)
+                        passable = need_id in collected        # ownership by id, mirrors NoteInventory.has
+                elif door:
+                    need = melody_pcs(door)                      # existing melody-door logic, unchanged
+                    passable = (need is not None) and (need <= owned)
+                    if passable and door not in door_opened_at:
+                        door_opened_at[door] = len(collected)
+                else:
+                    passable = True
                 if not passable:
                     continue
                 to = str(ex.get("to", ""))
@@ -179,6 +193,21 @@ def main() -> int:
                 f"{ceiling} for {held} note(s) held — guessable, consider lengthening (D-M3-8)"
             )
 
+    return errors, warnings
+
+
+def main() -> int:
+    notes = {n["id"]: n for n in load_json(DATA / "notes.json").get("notes", [])}
+    melodies = {}
+    for path in sorted((DATA / "melodies").glob("*.json")):
+        m = load_json(path)
+        if "id" in m:
+            melodies[m["id"]] = m
+
+    graph = load_json(DATA / "rooms.json")
+
+    errors, warnings = validate(graph, notes, melodies)
+
     for w in warnings:
         print(f"warning: {w}")
     if errors:
@@ -186,6 +215,51 @@ def main() -> int:
             print(f"error: {e}", file=sys.stderr)
         print(f"\nvalidate_rooms: FAILED with {len(errors)} error(s).", file=sys.stderr)
         return 1
+
+    # For the summary, recompute door_opened_at (same algorithm as in validate)
+    rooms = graph.get("rooms", {})
+    start = graph.get("start", {})
+    start_room = str(start.get("room", ""))
+    reachable = {start_room} if start_room in rooms else set()
+    collected = set()
+    for rid in reachable:
+        collected |= set(rooms[rid].get("notes", []))
+    door_opened_at: dict[str, int] = {}
+
+    changed = True
+    while changed:
+        changed = False
+        owned = {SEMITONE.get(str(notes[nid].get("pitch_class", "")).upper())
+                 for nid in collected if nid in notes}
+        owned.discard(None)
+        for rid in list(reachable):
+            for ex in rooms[rid].get("exits", []):
+                door = str(ex.get("door", ""))
+                req = ex.get("requires")
+                passable = False
+                if req is not None:
+                    need_id = str(req.get("note", ""))
+                    passable = need_id in collected
+                elif door:
+                    m = melodies.get(door)
+                    if m:
+                        need = set()
+                        for name in m.get("notes", []):
+                            pc = pitch_class(str(name))
+                            if pc is not None:
+                                need.add(pc)
+                        passable = need <= owned
+                        if passable and door not in door_opened_at:
+                            door_opened_at[door] = len(collected)
+                else:
+                    passable = True
+                if not passable:
+                    continue
+                to = str(ex.get("to", ""))
+                if to in rooms and to not in reachable:
+                    reachable.add(to)
+                    collected |= set(rooms[to].get("notes", []))
+                    changed = True
 
     print(
         f"validate_rooms: OK — {len(rooms)} rooms reachable, "

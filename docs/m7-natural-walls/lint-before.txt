@@ -1,0 +1,117 @@
+ok    room_a.json
+      warning: rock 29.9% excl outcrops / 31.9% incl (target 20–30% excl)
+      accepted: straight_run at (11, 4) (11 cells)
+      accepted: straight_run at (26, 4) (11 cells)
+      accepted: straight_run at (2, 33) (27 cells)
+      accepted: straight_run at (39, 33) (6 cells)
+      accepted: straight_run at (2, 12) (4 cells)
+      accepted: straight_run at (2, 17) (5 cells)
+      accepted: straight_run at (19, 20) (3 cells)
+      accepted: straight_run at (8, 14) (3 cells)
+      accepted: straight_run at (42, 9) (3 cells)
+      accepted: straight_run at (44, 20) (7 cells)
+      accepted: straight_run at (45, 17) (3 cells)
+      accepted: straight_run at (45, 27) (6 cells)
+      accepted: staircase at (11, 4) (7 cells)
+      accepted: staircase at (6, 8) (8 cells)
+      summary: [natural]  straight_run 0+12acc  staircase 0+2acc  pipe 0+0acc  rock 29.9%
+ok    room_antechamber.json
+      warning: rock 30.6% excl outcrops / 30.6% incl (target 20–30% excl)
+      warning: rock 30.6% (excl outcrops) is outside the 20–30% target
+      summary: [carved]  straight_run 0+0acc  staircase 0+0acc  pipe 0+0acc  rock 30.6%
+ok    room_b.json
+      warning: rock 30.5% excl outcrops / 32.6% incl (target 20–30% excl)
+      warning: rock 30.5% (excl outcrops) is outside the 20–30% target
+      accepted: straight_run at (49, 1) (11 cells)
+      accepted: straight_run at (6, 2) (21 cells)
+      accepted: straight_run at (44, 2) (5 cells)
+      accepted: straight_run at (60, 2) (3 cells)
+      accepted: straight_run at (76, 2) (15 cells)
+      accepted: straight_run at (27, 3) (3 cells)
+      accepted: straight_run at (41, 3) (3 cells)
+      accepted: straight_run at (73, 3) (3 cells)
+      accepted: straight_run at (30, 4) (11 cells)
+      accepted: straight_run at (65, 4) (8 cells)
+      accepted: straight_run at (81, 12) (3 cells)
+      accepted: straight_run at (30, 14) (11 cells)
+      accepted: straight_run at (64, 14) (9 cells)
+      accepted: straight_run at (89, 14) (3 cells)
+      accepted: straight_run at (27, 15) (3 cells)
+      accepted: straight_run at (41, 15) (3 cells)
+      accepted: straight_run at (61, 15) (3 cells)
+      accepted: straight_run at (73, 15) (6 cells)
+      accepted: straight_run at (8, 16) (19 cells)
+      accepted: straight_run at (44, 16) (17 cells)
+      accepted: straight_run at (4, 4) (9 cells)
+      accepted: straight_run at (92, 5) (8 cells)
+      accepted: staircase at (47, 11) (6 cells)
+      summary: [natural]  straight_run 0+22acc  staircase 0+1acc  pipe 0+0acc  rock 30.5%
+ok    room_choir.json
+      warning: rock 14.5% excl outcrops / 14.5% incl (target 20–30% excl)
+      warning: rock 14.5% (excl outcrops) is outside the 20–30% target
+      warning: straight_run at (2, 2) (58 cells)
+      warning: straight_run at (62, 2) (32 cells)
+      warning: straight_run at (2, 33) (92 cells)
+      warning: straight_run at (2, 2) (15 cells)
+      warning: straight_run at (2, 19) (15 cells)
+      warning: straight_run at (93, 2) (3 cells)
+      warning: straight_run at (93, 9) (25 cells)
+      summary: [natural]  straight_run 7+0acc  staircase 0+0acc  pipe 0+0acc  rock 14.5%
+ok    room_drip.json
+      warning: rock 30.6% excl outcrops / 30.6% incl (target 20–30% excl)
+      warning: rock 30.6% (excl outcrops) is outside the 20–30% target
+      warning: straight_run at (2, 2) (12 cells)
+      warning: straight_run at (16, 2) (14 cells)
+      warning: straight_run at (2, 15) (11 cells)
+      warning: straight_run at (17, 15) (13 cells)
+      warning: straight_run at (2, 2) (14 cells)
+      warning: straight_run at (29, 2) (14 cells)
+      summary: [natural]  straight_run 6+0acc  staircase 0+0acc  pipe 0+0acc  rock 30.6%
+ok    room_hollow.json
+      warning: rock 31.2% excl outcrops / 31.2% incl (target 20–30% excl)
+      warning: rock 31.2% (excl outcrops) is outside the 20–30% target
+      warning: straight_run at (2, 2) (28 cells)
+      warning: straight_run at (2, 15) (28 cells)
+      warning: straight_run at (2, 2) (14 cells)
+      warning: straight_run at (29, 2) (6 cells)
+      warning: straight_run at (29, 10) (6 cells)
+      summary: [natural]  straight_run 5+0acc  staircase 0+0acc  pipe 0+0acc  rock 31.2%
+ok    room_overlook.json
+      warning: rock 30.6% excl outcrops / 30.6% incl (target 20–30% excl)
+      warning: rock 30.6% (excl outcrops) is outside the 20–30% target
+      warning: straight_run at (2, 2) (12 cells)
+      warning: straight_run at (16, 2) (14 cells)
+      warning: straight_run at (2, 15) (12 cells)
+      warning: straight_run at (16, 15) (14 cells)
+      warning: straight_run at (2, 2) (14 cells)
+      warning: straight_run at (29, 2) (14 cells)
+      summary: [natural]  straight_run 6+0acc  staircase 0+0acc  pipe 0+0acc  rock 30.6%
+ok    room_resonance.json
+      warning: rock 16.3% excl outcrops / 16.3% incl (target 20–30% excl)
+      warning: rock 16.3% (excl outcrops) is outside the 20–30% target
+      summary: [carved]  straight_run 0+0acc  staircase 0+0acc  pipe 0+0acc  rock 16.3%
+ok    room_span.json
+      warning: rock 26.4% excl outcrops / 26.4% incl (target 20–30% excl)
+      warning: straight_run at (2, 2) (12 cells)
+      warning: straight_run at (18, 2) (44 cells)
+      warning: straight_run at (2, 15) (60 cells)
+      warning: straight_run at (2, 2) (14 cells)
+      warning: straight_run at (61, 2) (6 cells)
+      warning: straight_run at (61, 10) (6 cells)
+      summary: [natural]  straight_run 6+0acc  staircase 0+0acc  pipe 0+0acc  rock 26.4%
+ok    room_stair.json
+      warning: rock 18.5% excl outcrops / 18.5% incl (target 20–30% excl)
+      warning: rock 18.5% (excl outcrops) is outside the 20–30% target
+      warning: straight_run at (2, 2) (12 cells)
+      warning: straight_run at (16, 2) (14 cells)
+      warning: straight_run at (2, 51) (11 cells)
+      warning: straight_run at (17, 51) (13 cells)
+      warning: straight_run at (2, 2) (50 cells)
+      warning: straight_run at (29, 2) (50 cells)
+      summary: [natural]  straight_run 6+0acc  staircase 0+0acc  pipe 0+0acc  rock 18.5%
+ok    room_threshold.json
+      warning: rock 31.2% excl outcrops / 31.2% incl (target 20–30% excl)
+      warning: rock 31.2% (excl outcrops) is outside the 20–30% target
+      summary: [carved]  straight_run 0+0acc  staircase 0+0acc  pipe 0+0acc  rock 31.2%
+
+lint_rooms: OK — 11 room(s), no errors.

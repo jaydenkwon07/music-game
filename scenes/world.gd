@@ -47,8 +47,33 @@ func _ready() -> void:
 	_modulate = dark
 	NoteBus.shake_requested.connect(_on_shake_requested)
 	add_child(InstrumentOverlay.new())
-	var s := RoomGraph.start()
+	var s := _debug_start() if OS.is_debug_build() else {}
+	if s.is_empty():
+		s = RoomGraph.start()
 	enter_room(str(s.get("room", "")), str(s.get("entry", "")))
+
+
+## Debug jump-to-room for reviewing rooms (M7 spec §6 Step 0):
+## `godot . -- --room=<id> [--spawn=<entry>]`. Command-line only, never a key, so it stays
+## out of the shipped input path. Without --spawn it lands on the room's first authored entry
+## rather than the room centre, which in a carved room is likely rock.
+func _debug_start() -> Dictionary:
+	var room_id := ""
+	var entry_id := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--room="):
+			room_id = arg.trim_prefix("--room=")
+		elif arg.begins_with("--spawn="):
+			entry_id = arg.trim_prefix("--spawn=")
+	if room_id.is_empty():
+		return {}
+	var entries: Dictionary = RoomGraph.geometry(room_id).get("entries", {})
+	if entries.is_empty():
+		push_error("World: --room=%s has no geometry; using the normal start." % room_id)
+		return {}
+	if entry_id.is_empty():
+		entry_id = "spawn" if entries.has("spawn") else str(entries.keys()[0])
+	return {"room": room_id, "entry": entry_id}
 
 
 ## Swap to a room and place the player at one of its named entries. Freeing the

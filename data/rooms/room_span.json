@@ -1,5 +1,6 @@
 {
   "room_id": "room_span",
+  "geometry": "natural",
   "size_tiles": [
     64,
     18

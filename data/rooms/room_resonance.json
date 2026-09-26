@@ -1,5 +1,6 @@
 {
   "room_id": "room_resonance",
+  "geometry": "carved",
   "size_tiles": [
     64,
     36

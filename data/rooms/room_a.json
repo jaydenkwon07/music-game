@@ -1,5 +1,6 @@
 {
   "room_id": "room_a",
+  "geometry": "natural",
   "size_tiles": [
     48,
     36

@@ -12,6 +12,7 @@ def scaffold(room_id: str, cols: int, rows: int) -> dict:
             grid[y][x] = "."
     return {
         "room_id": room_id,
+        "geometry": "natural",
         "size_tiles": [cols, rows],
         "grid": ["".join(r) for r in grid],
         "entries": {"spawn": [cx, cy]},

@@ -21,21 +21,28 @@ Stdlib only.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 import roomlib
-from roomlib import ROOMS_DIR
+from roomlib import APRON_MIN, ROOMS_DIR
 
-APRON_MIN = 4              # a straight flat run this deep at every exit (spec §6, §7)
+BASELINE = roomlib.ROOT / "data" / "lint_baseline.json"
+WALL_RULES = ("straight_run", "staircase", "pipe", "tooth")
 ROCK_TARGET = (0.20, 0.30)  # fraction of the bounds left as rock, excluding outcrops (§5, §7)
 
 
-def lint_room(data: dict) -> tuple[list[str], list[str]]:
+def lint_room(data: dict, accepted: list | None = None) -> tuple[list[str], list[str]]:
 	"""Return (errors, warnings) for one room geometry dict. Pure — no I/O — so a fixture can
-	drive it."""
+	drive it. `accepted` is this room's baseline entries; wall findings in it are not warned."""
 	errors: list[str] = []
 	warnings: list[str] = []
+
+	if data.get("geometry") not in roomlib.GEOMETRY_KINDS:
+		errors.append(
+			f"geometry is {data.get('geometry')!r}; must be one of {list(roomlib.GEOMETRY_KINDS)}"
+		)
 
 	grid = data.get("grid", [])
 	rows = len(grid)
@@ -154,7 +161,33 @@ def lint_room(data: dict) -> tuple[list[str], list[str]]:
 			f"{int(ROCK_TARGET[0] * 100)}–{int(ROCK_TARGET[1] * 100)}% target"
 		)
 
+	# --- Natural walls, rules 1–3 (warnings; the owner's baseline accepts some) ---
+	for rule, cells in unaccepted_walls(data, accepted or []):
+		warnings.append(f"{rule} at {cells[0]} ({len(cells)} cells)")
+
 	return errors, warnings
+
+
+def _baseline_key(rule: str, cell) -> tuple[str, tuple[int, int]]:
+	return (rule, (int(cell[0]), int(cell[1])))
+
+
+def split_walls(data: dict, accepted: list) -> tuple[list, list]:
+	"""(unaccepted, accepted) wall findings. A baseline entry names a finding by its rule and
+	first cell — the same thing the warning prints, so it can be copied straight in."""
+	keys = {_baseline_key(a["rule"], a["at"]) for a in accepted}
+	fresh, ok = [], []
+	for rule, cells in roomlib.wall_findings(data):
+		(ok if _baseline_key(rule, cells[0]) in keys else fresh).append((rule, cells))
+	return fresh, ok
+
+
+def unaccepted_walls(data: dict, accepted: list) -> list:
+	return split_walls(data, accepted)[0]
+
+
+def load_baseline() -> dict:
+	return json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else {}
 
 
 def _nearest_link(links: list, cell: tuple[int, int]) -> dict:
@@ -178,14 +211,7 @@ def _content_cells(data: dict) -> list[tuple[tuple[int, int], str]]:
 	return out
 
 
-def _reserved_cells(at: tuple[int, int], inw: tuple[int, int]) -> set[tuple[int, int]]:
-	"""The leaf's footprint plus a 2-tile approach clearance inward of it."""
-	cells = roomlib.rect_to_cells(roomlib.door_rect(at, inw))
-	reserved = set(cells)
-	for cell in cells:
-		for k in (1, 2):
-			reserved.add((cell[0] + inw[0] * k, cell[1] + inw[1] * k))
-	return reserved
+_reserved_cells = roomlib.door_reserved_cells
 
 
 def _targets(argv: list[str]) -> list[Path]:
@@ -206,13 +232,26 @@ def main(argv: list[str]) -> int:
 		print("lint_rooms: no room files found", file=sys.stderr)
 		return 1
 	total_errors = 0
+	baseline = load_baseline()
 	for path in targets:
-		errors, warnings = lint_room(roomlib.load_room(path))
+		data = roomlib.load_room(path)
+		accepted = baseline.get(data.get("room_id", path.stem), [])
+		errors, warnings = lint_room(data, accepted)
 		total_errors += len(errors)
 		status = "FAIL" if errors else "ok  "
 		print(f"{status}  {path.name}")
 		for w in warnings:
 			print(f"      warning: {w}")
+		fresh, ok = split_walls(data, accepted)
+		for rule, cells in ok:
+			print(f"      accepted: {rule} at {cells[0]} ({len(cells)} cells)")
+		counts = "  ".join(
+			f"{r} {sum(1 for f in fresh if f[0] == r)}+{sum(1 for f in ok if f[0] == r)}acc"
+			for r in WALL_RULES
+		)
+		rock = sum(row.count("#") for row in data.get("grid", []))
+		cells_total = sum(len(row) for row in data.get("grid", [])) or 1
+		print(f"      summary: [{data.get('geometry', '?')}]  {counts}  rock {rock / cells_total * 100:.1f}%")
 		for e in errors:
 			print(f"      error:   {e}", file=sys.stderr)
 	if total_errors:

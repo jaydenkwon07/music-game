@@ -1,5 +1,6 @@
 {
   "room_id": "room_antechamber",
+  "geometry": "carved",
   "size_tiles": [
     32,
     18
